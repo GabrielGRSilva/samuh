@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"samuh/internal/analyzer"
 	"samuh/internal/engine"
 	"samuh/internal/reporter"
 	"samuh/internal/rules"
+
+	"github.com/spf13/cobra"
 
 	// Import analyzer packages to trigger their init() registration.
 	_ "samuh/internal/analyzer/javascript"
@@ -33,6 +34,7 @@ If no path is specified, the current directory is scanned.`,
 }
 
 func init() {
+	scanCmd.Flags().String("scope", "project", "Scan scope: project or folder")
 	scanCmd.Flags().StringP("output", "o", "", "Output file path (empty = stdout)")
 	scanCmd.Flags().StringP("format", "f", "markdown", "Report format: json, html, markdown, sarif")
 	scanCmd.Flags().StringP("severity", "s", "low", "Minimum severity filter: info, low, medium, high, critical")

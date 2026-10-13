@@ -20,12 +20,13 @@ import (
 
 // Options configures a scan operation.
 type Options struct {
-	Path        string         // Path is the root directory to scan.
-	Exclude     []string       // Exclude is a list of glob patterns to exclude from scanning.
-	Languages   []string       // Languages filters scanning to specific language analyzers. If empty, all registered analyzers are used.
-	MinSeverity rules.Severity // MinSeverity is the minimum severity level for reported findings.
-	MaxFileSize int64          // MaxFileSize is the maximum file size in bytes to scan.
-	Verbose     bool           // Verbose enables detailed progress output during scanning.
+	Scope       rules.ScanScope // Scope is the scan scope (the entire project, a specific folder inside it, etc.)
+	Path        string          // Path is the root directory to scan.
+	Exclude     []string        // Exclude is a list of glob patterns to exclude from scanning.
+	Languages   []string        // Languages filters scanning to specific language analyzers. If empty, all registered analyzers are used.
+	MinSeverity rules.Severity  // MinSeverity is the minimum severity level for reported findings.
+	MaxFileSize int64           // MaxFileSize is the maximum file size in bytes to scan.
+	Verbose     bool            // Verbose enables detailed progress output during scanning.
 }
 
 // Engine orchestrates the scanning process by coordinating file discovery,
@@ -123,16 +124,19 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		return nil, ctx.Err()
 	}
 
-	// Run project-level analysis
-	if e.opts.Verbose {
-		fmt.Fprintf(os.Stderr, "[verbose] Running project-level analysis...\n")
-	}
-	for _, a := range analyzers {
-		findings, err := a.AnalyzeProject(ctx, e.opts.Path)
-		if err == nil && len(findings) > 0 {
-			allFindings = append(allFindings, findings...)
-			if e.opts.Verbose {
-				fmt.Fprintf(os.Stderr, "[verbose] %s project analysis: %d finding(s)\n", a.Name(), len(findings))
+	if e.opts.Scope == rules.ScanScopeProject {
+
+		// Run project-level analysis
+		if e.opts.Verbose {
+			fmt.Fprintf(os.Stderr, "[verbose] Running project-level analysis...\n")
+		}
+		for _, a := range analyzers {
+			findings, err := a.AnalyzeProject(ctx, e.opts.Path)
+			if err == nil && len(findings) > 0 {
+				allFindings = append(allFindings, findings...)
+				if e.opts.Verbose {
+					fmt.Fprintf(os.Stderr, "[verbose] %s project analysis: %d finding(s)\n", a.Name(), len(findings))
+				}
 			}
 		}
 	}
