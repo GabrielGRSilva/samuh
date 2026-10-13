@@ -9,23 +9,12 @@ import (
 
 // FileContext provides all necessary information about a file to be analyzed.
 type FileContext struct {
-	// Path is the absolute path to the file.
-	Path string
-
-	// RelativePath is the path relative to the project root.
-	RelativePath string
-
-	// Content is the file content as bytes.
-	Content []byte
-
-	// Lines is the file content split into lines for convenience.
-	Lines []string
-
-	// Language is the detected language of the file.
-	Language string
-
-	// Size is the file size in bytes.
-	Size int64
+	Path         string   // Path is the absolute path to the file.
+	RelativePath string   // RelativePath is the path relative to the project root.
+	Content      []byte   // Content is the file content as bytes.
+	Lines        []string // Lines is the file content split into lines for convenience.
+	Language     string   // Language is the detected language of the file.
+	Size         int64    // Size is the file size in bytes.
 }
 
 // Analyzer is the interface that language-specific analyzers must implement.
