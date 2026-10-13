@@ -4,20 +4,11 @@ package rules
 
 // OWASPInfo contains details about an OWASP Top 10:2025 category.
 type OWASPInfo struct {
-	// ID is the short identifier (e.g., "A01:2025").
-	ID string
-
-	// Name is the human-readable category name.
-	Name string
-
-	// Description explains what the category covers.
-	Description string
-
-	// URL links to the official OWASP page for this category.
-	URL string
-
-	// CWEs lists common CWE identifiers associated with this category.
-	CWEs []string
+	ID          string   // ID is the short identifier (e.g., "A01:2025").
+	Name        string   // Name is the human-readable category name.
+	Description string   // Description explains what the category covers.
+	URL         string   // URL links to the official OWASP page for this category.
+	CWEs        []string // CWEs lists common CWE identifiers associated with this category.
 }
 
 // OWASPCatalog maps each OWASP Top 10:2025 category to its detailed information.
