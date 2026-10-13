@@ -188,7 +188,8 @@ The engine creates a worker pool with one goroutine per CPU core. All discovered
 
 #### Step 4: Project-Level Analysis
 
-After file scanning is complete, each analyzer gets one call to `AnalyzeProject()`. This is where analyzers check project-wide configuration files:
+After file scanning is complete, the engine checks the `--scope` flag. If the scope is set to `project` (the default), each analyzer gets one call to `AnalyzeProject()`. If the scope is set to `folder`, this step is entirely skipped.
+This is where analyzers check project-wide configuration files:
 - **PHP:** Checks for missing `composer.lock`, insecure `minimum-stability` in `composer.json`
 - **Node.js:** Checks for missing `package-lock.json`, wildcard `"*"` dependency versions, known-vulnerable packages
 
