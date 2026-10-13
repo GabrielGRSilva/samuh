@@ -85,7 +85,6 @@ const (
 // Rule defines a security check that an analyzer can perform.
 type Rule struct {
 	ID          string         // ID is a unique identifier for this rule (e.g., "PHP-INJ-001").
-	ScanScope   ScanScope      // Determines the scan scope (the entire project, a specific folder inside it, etc.)
 	Title       string         // Title is a short human-readable name for the rule.
 	Description string         // Description explains what the rule checks for.
 	Severity    Severity       // Severity is the default severity for findings from this rule.
