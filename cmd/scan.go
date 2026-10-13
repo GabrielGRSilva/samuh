@@ -34,7 +34,7 @@ If no path is specified, the current directory is scanned.`,
 }
 
 func init() {
-	scanCmd.Flags().String("scope", "project", "Scan scope: project or folder")
+	scanCmd.Flags().StringP("scope", "p", "project", "Scan scope: project or folder")
 	scanCmd.Flags().StringP("output", "o", "", "Output file path (empty = stdout)")
 	scanCmd.Flags().StringP("format", "f", "markdown", "Report format: json, html, markdown, sarif")
 	scanCmd.Flags().StringP("severity", "s", "low", "Minimum severity filter: info, low, medium, high, critical")
@@ -52,6 +52,7 @@ func runScan(cmd *cobra.Command, args []string) {
 		path = args[0]
 	}
 
+	scope, _ := cmd.Flags().GetString("scope")
 	out, _ := cmd.Flags().GetString("output")
 	formatStr, _ := cmd.Flags().GetString("format")
 	sevStr, _ := cmd.Flags().GetString("severity")
@@ -94,6 +95,7 @@ func runScan(cmd *cobra.Command, args []string) {
 
 	// Configure and run the engine
 	opts := engine.Options{
+		Scope:       rules.ScanScope(scope),
 		Path:        path,
 		Exclude:     excludes,
 		Languages:   langs,
