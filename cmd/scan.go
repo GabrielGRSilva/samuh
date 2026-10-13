@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"samuh/internal/analyzer"
@@ -60,6 +59,16 @@ func runScan(cmd *cobra.Command, args []string) {
 	excludes, _ := cmd.Flags().GetStringSlice("exclude")
 	maxSize, _ := cmd.Flags().GetInt64("max-file-size")
 
+	// Parse commands in order to sanitize them
+	scanScope, err := parseScope(scope)
+	format := parseFormat(formatStr)
+	minSev := parseSeverity(sevStr)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Cap max file size at 10MB
 	const maxFileSizeCap = 10 * 1024 * 1024
 	if maxSize > maxFileSizeCap {
@@ -80,22 +89,12 @@ func runScan(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// Parse report format
-	format, err := reporter.ParseFormat(formatStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Parse minimum severity
-	minSev := parseSeverity(sevStr)
-
 	// Create the analyzer registry with all built-in analyzers
 	registry := analyzer.DefaultRegistry()
 
 	// Configure and run the engine
 	opts := engine.Options{
-		Scope:       rules.ScanScope(scope),
+		Scope:       scanScope,
 		Path:        path,
 		Exclude:     excludes,
 		Languages:   langs,
@@ -165,23 +164,5 @@ func runScan(cmd *cobra.Command, args []string) {
 	if report.Summary.BySeverity[rules.SeverityCritical] > 0 ||
 		report.Summary.BySeverity[rules.SeverityHigh] > 0 {
 		os.Exit(1)
-	}
-}
-
-// parseSeverity converts a severity string to the Severity type.
-func parseSeverity(s string) rules.Severity {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "critical":
-		return rules.SeverityCritical
-	case "high":
-		return rules.SeverityHigh
-	case "medium":
-		return rules.SeverityMedium
-	case "low":
-		return rules.SeverityLow
-	case "info":
-		return rules.SeverityInfo
-	default:
-		return rules.SeverityLow
 	}
 }
