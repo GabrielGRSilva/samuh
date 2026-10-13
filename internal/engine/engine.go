@@ -20,24 +20,12 @@ import (
 
 // Options configures a scan operation.
 type Options struct {
-	// Path is the root directory to scan.
-	Path string
-
-	// Exclude is a list of glob patterns to exclude from scanning.
-	Exclude []string
-
-	// Languages filters scanning to specific language analyzers.
-	// If empty, all registered analyzers are used.
-	Languages []string
-
-	// MinSeverity is the minimum severity level for reported findings.
-	MinSeverity rules.Severity
-
-	// MaxFileSize is the maximum file size in bytes to scan.
-	MaxFileSize int64
-
-	// Verbose enables detailed progress output during scanning.
-	Verbose bool
+	Path        string         // Path is the root directory to scan.
+	Exclude     []string       // Exclude is a list of glob patterns to exclude from scanning.
+	Languages   []string       // Languages filters scanning to specific language analyzers. If empty, all registered analyzers are used.
+	MinSeverity rules.Severity // MinSeverity is the minimum severity level for reported findings.
+	MaxFileSize int64          // MaxFileSize is the maximum file size in bytes to scan.
+	Verbose     bool           // Verbose enables detailed progress output during scanning.
 }
 
 // Engine orchestrates the scanning process by coordinating file discovery,
