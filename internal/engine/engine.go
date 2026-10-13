@@ -124,9 +124,8 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		return nil, ctx.Err()
 	}
 
+	// Run project-level analysis ONLY if the scope is project
 	if e.opts.Scope == rules.ScanScopeProject {
-
-		// Run project-level analysis
 		if e.opts.Verbose {
 			fmt.Fprintf(os.Stderr, "[verbose] Running project-level analysis...\n")
 		}

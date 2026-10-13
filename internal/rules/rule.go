@@ -78,8 +78,8 @@ const (
 type ScanScope string
 
 const (
-	RuleScopeProject ScanScope = "PROJECT"
-	RuleScopeFolder  ScanScope = "FOLDER"
+	ScanScopeProject ScanScope = "PROJECT"
+	ScanScopeFolder  ScanScope = "FOLDER"
 )
 
 // Rule defines a security check that an analyzer can perform.
