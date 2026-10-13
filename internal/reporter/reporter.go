@@ -5,7 +5,6 @@ package reporter
 import (
 	"fmt"
 	"samuh/internal/rules"
-	"strings"
 )
 
 // Format represents a supported report output format.
@@ -17,22 +16,6 @@ const (
 	FormatMarkdown Format = "markdown"
 	FormatSARIF    Format = "sarif"
 )
-
-// ParseFormat converts a string to a Format, returning an error for unknown formats.
-func ParseFormat(s string) (Format, error) {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "json":
-		return FormatJSON, nil
-	case "html":
-		return FormatHTML, nil
-	case "markdown", "md":
-		return FormatMarkdown, nil
-	case "sarif":
-		return FormatSARIF, nil
-	default:
-		return "", fmt.Errorf("unknown report format %q (supported: json, html, markdown, sarif)", s)
-	}
-}
 
 // Reporter generates a report from scan results.
 type Reporter interface {

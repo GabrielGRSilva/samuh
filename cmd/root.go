@@ -7,12 +7,9 @@ import (
 )
 
 var (
-	// Version is the application version, set by ldflags
-	Version = "dev"
-	// Commit is the git commit hash, set by ldflags
-	Commit = "none"
-	// Date is the build date, set by ldflags
-	Date = "unknown"
+	Version = "dev"     // Version is the application version, set by ldflags.
+	Commit  = "none"    // Commit is the git commit hash, set by ldflags.
+	Date    = "unknown" // Date is the build date, set by ldflags.
 )
 
 var rootCmd = &cobra.Command{

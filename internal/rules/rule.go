@@ -75,95 +75,47 @@ const (
 	ConfidenceLow    Confidence = "LOW"
 )
 
+type ScanScope string
+
+const (
+	ScanScopeProject ScanScope = "PROJECT"
+	ScanScopeFolder  ScanScope = "FOLDER"
+)
+
 // Rule defines a security check that an analyzer can perform.
 type Rule struct {
-	// ID is a unique identifier for this rule (e.g., "PHP-INJ-001").
-	ID string
-
-	// Title is a short human-readable name for the rule.
-	Title string
-
-	// Description explains what the rule checks for.
-	Description string
-
-	// Severity is the default severity for findings from this rule.
-	Severity Severity
-
-	// Confidence is how likely a match is a true positive.
-	Confidence Confidence
-
-	// OWASP is the OWASP Top 10:2025 category this rule maps to.
-	OWASP OWASPCategory
-
-	// NIST lists the NIST CSF 2.0 functions this rule relates to.
-	NIST []NISTFunction
-
-	// CWE is the Common Weakness Enumeration identifier (e.g., "CWE-89").
-	CWE string
-
-	// Remediation provides guidance on how to fix findings from this rule.
-	Remediation string
-
-	// References are URLs to relevant documentation.
-	References []string
-
-	// Languages lists which languages this rule applies to.
-	// Empty means all languages.
-	Languages []string
+	ID          string         // ID is a unique identifier for this rule (e.g., "PHP-INJ-001").
+	Title       string         // Title is a short human-readable name for the rule.
+	Description string         // Description explains what the rule checks for.
+	Severity    Severity       // Severity is the default severity for findings from this rule.
+	Confidence  Confidence     // Confidence is how likely a match is a true positive.
+	OWASP       OWASPCategory  // OWASP is the OWASP Top 10:2025 category this rule maps to.
+	NIST        []NISTFunction // NIST lists the NIST CSF 2.0 functions this rule relates to.
+	CWE         string         // CWE is the Common Weakness Enumeration identifier (e.g., "CWE-89").
+	Remediation string         // Remediation provides guidance on how to fix findings from this rule.
+	References  []string       // References are URLs to relevant documentation.
+	Languages   []string       // Languages lists which languages this rule applies to. Empty means all languages.
 }
 
 // Finding represents a single vulnerability instance detected during scanning.
 type Finding struct {
-	// RuleID links back to the Rule that produced this finding.
-	RuleID string
-
-	// Title is a short description of the finding.
-	Title string
-
-	// Description provides detailed context about the specific finding.
-	Description string
-
-	// Severity of this particular finding (may be adjusted from rule default).
-	Severity Severity
-
-	// Confidence of this particular finding.
-	Confidence Confidence
-
-	// FilePath is the path to the file where the finding was detected.
-	FilePath string
-
-	// Line is the 1-based line number of the finding.
-	Line int
-
-	// Column is the 1-based column number (0 if unknown).
-	Column int
-
-	// EndLine is the ending line of the finding (0 if single-line).
-	EndLine int
-
-	// Snippet is the relevant source code around the finding.
-	Snippet string
-
-	// MatchContent is the specific text that triggered the finding.
-	MatchContent string
-
-	// OWASP is the OWASP Top 10:2025 category.
-	OWASP OWASPCategory
-
-	// NIST lists the NIST CSF 2.0 functions.
-	NIST []NISTFunction
-
-	// CWE is the Common Weakness Enumeration identifier.
-	CWE string
-
-	// Remediation provides specific fix guidance for this finding.
-	Remediation string
-
-	// References are URLs to relevant documentation.
-	References []string
-
-	// Language is the language of the file where the finding was detected.
-	Language string
+	RuleID       string         // RuleID links back to the Rule that produced this finding.
+	Title        string         // Title is a short description of the finding.
+	Description  string         // Description provides detailed context about the specific finding.
+	Severity     Severity       // Severity of this particular finding (may be adjusted from rule default).
+	Confidence   Confidence     // Confidence of this particular finding.
+	FilePath     string         // FilePath is the path to the file where the finding was detected.
+	Line         int            // Line is the 1-based line number of the finding.
+	Column       int            // Column is the 1-based column number (0 if unknown).
+	EndLine      int            // EndLine is the ending line of the finding (0 if single-line).
+	Snippet      string         // Snippet is the relevant source code around the finding.
+	MatchContent string         // MatchContent is the specific text that triggered the finding.
+	OWASP        OWASPCategory  // OWASP is the OWASP Top 10:2025 category.
+	NIST         []NISTFunction // NIST lists the NIST CSF 2.0 functions.
+	CWE          string         // CWE is the Common Weakness Enumeration identifier.
+	Remediation  string         // Remediation provides specific fix guidance for this finding.
+	References   []string       // References are URLs to relevant documentation.
+	Language     string         // Language is the language of the file where the finding was detected.
 }
 
 // String returns a human-readable representation of the finding.
@@ -173,53 +125,25 @@ func (f Finding) String() string {
 
 // ScanReport holds the complete results of a scan operation.
 type ScanReport struct {
-	// ProjectPath is the root path that was scanned.
-	ProjectPath string
-
-	// ScanTimestamp is the ISO 8601 timestamp when the scan started.
-	ScanTimestamp string
-
-	// ScanDuration is the human-readable scan duration (e.g., "1.23s").
-	ScanDuration string
-
-	// ScanDurationMs is the scan duration in milliseconds.
-	ScanDurationMs int64
-
-	// TotalFiles is the number of files scanned.
-	TotalFiles int
-
-	// TotalFindings is the total number of findings.
-	TotalFindings int
-
-	// Findings is the list of all findings, sorted by severity.
-	Findings []Finding
-
-	// Summary provides aggregate counts by category.
-	Summary ReportSummary
-
-	// Languages lists the languages detected in the project.
-	Languages []string
-
-	// ScannerVersion is the version of SAMUH that produced this report.
-	ScannerVersion string
+	ProjectPath    string        // ProjectPath is the root path that was scanned.
+	ScanTimestamp  string        // ScanTimestamp is the ISO 8601 timestamp when the scan started.
+	ScanDuration   string        // ScanDuration is the human-readable scan duration (e.g., "1.23s").
+	ScanDurationMs int64         // ScanDurationMs is the scan duration in milliseconds.
+	TotalFiles     int           // TotalFiles is the number of files scanned.
+	TotalFindings  int           // TotalFindings is the total number of findings.
+	Findings       []Finding     // Findings is the list of all findings, sorted by severity.
+	Summary        ReportSummary // Summary provides aggregate counts by category.
+	Languages      []string      // Languages lists the languages detected in the project.
+	ScannerVersion string        // ScannerVersion is the version of SAMUH that produced this report.
 }
 
 // ReportSummary provides aggregate statistics for a scan report.
 type ReportSummary struct {
-	// BySeverity counts findings per severity level.
-	BySeverity map[Severity]int
-
-	// ByOWASP counts findings per OWASP category.
-	ByOWASP map[OWASPCategory]int
-
-	// ByNIST counts findings per NIST function.
-	ByNIST map[NISTFunction]int
-
-	// ByLanguage counts findings per language.
-	ByLanguage map[string]int
-
-	// ByFile counts findings per file path.
-	ByFile map[string]int
+	BySeverity map[Severity]int      // BySeverity counts findings per severity level.
+	ByOWASP    map[OWASPCategory]int // ByOWASP counts findings per OWASP category.
+	ByNIST     map[NISTFunction]int  // ByNIST counts findings per NIST function.
+	ByLanguage map[string]int        // ByLanguage counts findings per language.
+	ByFile     map[string]int        // ByFile counts findings per file path.
 }
 
 // NewReportSummary creates a ReportSummary with initialized maps.

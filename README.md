@@ -172,6 +172,20 @@ This means you can use SAMUH in CI/CD pipelines and it will automatically fail t
 
 The `scan` command is the main command. The `[path]` is optional — if you don't provide one, it scans the current directory (`.`).
 
+#### `--scope` or `-p` (default: `project`)
+
+**What it does:** Tells SAMUH whether to evaluate repository-wide integrity rules (like missing lockfiles) or strictly stick to file-level regex scanning.
+
+```bash
+# Scan the entire project, including lockfiles and manifests (default)
+samuh scan . --scope project
+
+# Only scan source files, ignoring project-wide config files
+samuh scan . --scope folder
+```
+
+**Note**: Using an invalid scope like '--scope projet' will cause SAMUH to halt with an error, preventing you from accidentally bypassing project-level checks.
+
 #### `--format` or `-f` (default: `markdown`)
 
 **What it does:** Chooses the output format for the report.
