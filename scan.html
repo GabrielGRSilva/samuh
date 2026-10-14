@@ -1,0 +1,3289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMUH Security Scan Report</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #dee2e6;
+            --header-bg: #343a40;
+            --header-text: #fff;
+            --primary: #007bff;
+            
+             
+            --sev-critical: #dc3545;
+            --sev-high: #fd7e14;
+            --sev-medium: #ffc107;
+            --sev-low: #17a2b8;
+            --sev-info: #6c757d;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #e0e0e0;
+                --card-bg: #1e1e1e;
+                --border-color: #333;
+                --header-bg: #222;
+                --header-text: #fff;
+                --primary: #375a7f;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .summary-stat {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(0,0,0,0.02);
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25em 0.4em;
+            font-size: 75%;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+            color: #fff;
+        }
+
+        .badge-CRITICAL { background-color: var(--sev-critical); }
+        .badge-HIGH { background-color: var(--sev-high); }
+        .badge-MEDIUM { background-color: var(--sev-medium); color: #212529; }
+        .badge-LOW { background-color: var(--sev-low); }
+        .badge-INFO { background-color: var(--sev-info); }
+
+        details {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        summary {
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            user-select: none;
+        }
+        
+        summary:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+
+        .finding-details {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            pre {
+                background-color: #2d2d2d;
+                border-color: #444;
+            }
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(0,0,0,0.02);
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .meta-item {
+            font-size: 0.9rem;
+        }
+        
+        .meta-label {
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.85rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .samuh-footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1.5rem 1rem;
+            border-top: 1px solid #2d3748;
+            color: #a0aec0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .samuh-footer p {
+            margin: 0.35rem 0;
+        }
+        .samuh-footer strong {
+            color: #e2e8f0;
+        }
+        .samuh-footer a {
+            color: #63b3ed;  
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s ease;
+        }
+        .samuh-footer a:hover,
+        .samuh-footer a:focus {
+            color: #90cdf4;
+            text-decoration: underline;
+        }
+        .samuh-flag {
+            display: inline-block;
+            width: 1.25em;
+            height: 0.9em;
+            vertical-align: -0.12em;
+            margin-left: 0.25rem;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ SAMUH Security Scanner</h1>
+        <div>v0.1.0</div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Scan Summary</h2>
+            <div class="grid">
+                <div>
+                    <div class="summary-stat">38</div>
+                    <div class="summary-label">Total Findings</div>
+                </div>
+                <div>
+                    <div class="summary-stat">36</div>
+                    <div class="summary-label">Files Scanned</div>
+                </div>
+                <div>
+                    <div class="summary-stat">0.05s</div>
+                    <div class="summary-label">Duration</div>
+                </div>
+                <div>
+                    <div class="summary-stat">.</div>
+                    <div class="summary-label">Project</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Findings by Severity</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td><span class="badge badge-CRITICAL">CRITICAL</span></td>
+                            <td>7</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-HIGH">HIGH</span></td>
+                            <td>16</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-LOW">LOW</span></td>
+                            <td>5</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-MEDIUM">MEDIUM</span></td>
+                            <td>10</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>OWASP Top 10</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>A01:2025-Broken Access Control</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A02:2025-Security Misconfiguration</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A03:2025-Software Supply Chain Failures</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A04:2025-Cryptographic Failures</td>
+                            <td>7</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A05:2025-Injection</td>
+                            <td>11</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A06:2025-Insecure Design</td>
+                            <td>1</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A07:2025-Authentication Failures</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A08:2025-Software or Data Integrity Failures</td>
+                            <td>5</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A09:2025-Security Logging and Monitoring Failures</td>
+                            <td>3</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A10:2025-Mishandling of Exceptional Conditions</td>
+                            <td>3</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Findings</h2>
+            <input type="text" id="searchInput" placeholder="Filter findings by text..." onkeyup="filterFindings()">
+            
+            <div id="findingsList">
+                
+                <details class="finding-item" data-text="OS Command Injection PHP-A05-003 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        OS Command Injection (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:15)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-003</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:15</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-78</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Passing user input to system shell execution functions enables OS command injection.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>system(&#34;cat &#34; . $file);
+exec(&#34;rm &#34; . $_GET[&#39;path&#39;]);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid shelling out if possible. If required, use escapeshellarg() and escapeshellcmd().</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Potential Code Injection (eval) NODE-A05-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Potential Code Injection (eval) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:23)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A05-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:23</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-94</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>User input is passed to a code execution function like eval() or Function constructor.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const result = eval(req.body.expression);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid using eval() or Function constructors. Use safer alternatives for parsing or executing logic.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Command Injection in exec() NODE-A05-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Command Injection in exec() (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:8)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A05-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:8</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-78</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>User input is concatenated into a system command executed via child_process.exec(), enabling command injection.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>child_process.exec(&#39;ls &#39; &#43; req.query.dir, (err, stdout) =&gt; {</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use child_process.execFile or spawn instead, and pass arguments as an array rather than a single string.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Local/Remote File Inclusion (LFI/RFI) PHP-A05-004 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Local/Remote File Inclusion (LFI/RFI) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:36)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-004</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:36</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-98</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Directly including files based on user input can execute arbitrary code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// File Inclusion (A05)
+include($_GET[&#39;page&#39;] . &#39;.php&#39;);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use a mapping or allowlist for includes. Never use user input directly in include/require.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Use of eval() PHP-A08-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Use of eval() (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:29)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A08-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:29</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-95</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>The eval() function executes arbitrary PHP code. It is extremely dangerous.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// eval (A08)
+eval($_POST[&#39;code&#39;]);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Refactor code to avoid the use of eval().</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Use of eval() PHP-A08-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Use of eval() (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:28)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A08-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:28</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-95</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>The eval() function executes arbitrary PHP code. It is extremely dangerous.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>
+// eval (A08)
+eval($_POST[&#39;code&#39;]);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Refactor code to avoid the use of eval().</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Insecure Deserialization PHP-A08-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Insecure Deserialization (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:26)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A08-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:26</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-502</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Deserializing user-supplied input can lead to object injection and Remote Code Execution.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Insecure deserialization (A08)
+$data = unserialize($_COOKIE[&#39;session_data&#39;]);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use a safe data format like JSON (json_decode) instead of serialize/unserialize.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Code Injection via eval/setTimeout JS-INJ-006 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Code Injection via eval/setTimeout (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:36)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-006</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:36</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-94</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Using eval(), new Function(), setTimeout(), or setInterval() with dynamic strings allows arbitrary code execution.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>setTimeout(&#34;doSomething(&#39;&#34; &#43; userInput &#43; &#34;&#39;)&#34;, 100);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid these functions entirely or pass function references instead of strings.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:17)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:17</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const API_KEY = &#34;AIzaSyB1234567890abcdef&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="DOM XSS via innerHTML JS-INJ-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        DOM XSS via innerHTML (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:4)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:4</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Assigning values directly to innerHTML/outerHTML can lead to Cross-Site Scripting (XSS) if the data is untrusted.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>document.getElementById(&#39;output&#39;).innerHTML = userInput;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use textContent or DOM manipulation methods (createElement) instead, or sanitize input using DOMPurify.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Weak Hashing Algorithm (MD5/SHA1) NODE-A04-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Weak Hashing Algorithm (MD5/SHA1) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:33)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A04-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:33</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-328</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Use of MD5 or SHA1 for hashing is insecure. These algorithms are vulnerable to collision attacks.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const hash = crypto.createHash(&#39;md5&#39;).update(password).digest(&#39;hex&#39;);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use strong hashing algorithms like SHA-256 (sha256) or SHA-3.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="DOM XSS via document.write JS-INJ-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        DOM XSS via document.write (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:5)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:5</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Using document.write() with user input can lead to XSS vulnerabilities.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>document.write(location.hash);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid document.write(). Use safe DOM manipulation methods instead.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Credentials in URL JS-AF-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A07:2025-Authentication Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Credentials in URL (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:46)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-AF-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:46</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A07:2025-Authentication Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-598</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Sensitive data is passed via URL parameters, where it can be logged in browser history, proxy logs, or referer headers.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>fetch(`https://api.example.com?api_key=${apiKey}&amp;secret=${secret}`);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Pass sensitive credentials securely in the request body (POST) or in HTTP headers.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Vue v-html Directive JS-INJ-004 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Vue v-html Directive (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-004</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Using the v-html directive in Vue renders raw HTML and can lead to XSS if the content is untrusted.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// &lt;div v-html=&#34;userContent&#34;&gt;&lt;/div&gt;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Sanitize the content before binding it to v-html, or use standard text interpolation ({{ }}).</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="React dangerouslySetInnerHTML JS-INJ-003 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        React dangerouslySetInnerHTML (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:9)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-003</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:9</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Using dangerouslySetInnerHTML in React bypasses built-in XSS protections.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>return &lt;div dangerouslySetInnerHTML={{ __html: bio }} /&gt;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure data passed to dangerouslySetInnerHTML is strictly sanitized, or use standard React rendering.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Cross-Site Scripting (XSS) via Unsanitized Input PHP-A05-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Cross-Site Scripting (XSS) via Unsanitized Input (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:9)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:9</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Directly outputting user input without encoding can lead to Reflected XSS.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// XSS (A05)
+echo $_GET[&#39;name&#39;];
+echo &#34;&lt;h1&gt;&#34; . $_REQUEST[&#39;title&#39;] . &#34;&lt;/h1&gt;&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use htmlspecialchars() with ENT_QUOTES | ENT_HTML5 to escape output.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Cross-Site Scripting (XSS) via Unsanitized Input PHP-A05-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Cross-Site Scripting (XSS) via Unsanitized Input (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:10)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:10</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Directly outputting user input without encoding can lead to Reflected XSS.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>echo $_GET[&#39;name&#39;];
+echo &#34;&lt;h1&gt;&#34; . $_REQUEST[&#39;title&#39;] . &#34;&lt;/h1&gt;&#34;;
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use htmlspecialchars() with ENT_QUOTES | ENT_HTML5 to escape output.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:29)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:29</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const API_KEY = &#34;sk_live_abcdef123456&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Prototype Pollution Vulnerability JS-DIF-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Prototype Pollution Vulnerability (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:22)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-DIF-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:22</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1321</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Direct use of __proto__ or constructor.prototype can lead to prototype pollution, altering object behavior.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>obj.constructor.prototype.isAdmin = true;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid direct manipulation of prototypes. Use Object.create(null) for dictionary objects.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Prototype Pollution Vulnerability JS-DIF-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Prototype Pollution Vulnerability (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:21)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-DIF-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:21</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1321</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Direct use of __proto__ or constructor.prototype can lead to prototype pollution, altering object behavior.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>obj.__proto__.admin = true;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid direct manipulation of prototypes. Use Object.create(null) for dictionary objects.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:18)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:18</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const SECRET = &#34;ghp_1234567890abcdef1234567890abcdef12&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:28)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:28</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const JWT_SECRET = &#34;my-super-secret-key-12345&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Sensitive Data in Logs PHP-A09-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php HIGH A09:2025-Security Logging and Monitoring Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Sensitive Data in Logs (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A09-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A09:2025-Security Logging and Monitoring Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-532</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Logging sensitive variables like passwords or tokens may expose them.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Logging secrets (A09)
+error_log(&#34;User login with password: &#34; . $password);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Sanitize log entries to ensure no sensitive credentials or tokens are logged.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Missing Subresource Integrity (SRI) JS-SSC-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A03:2025-Software Supply Chain Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Missing Subresource Integrity (SRI) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:55)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-SSC-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:55</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A03:2025-Software Supply Chain Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-829</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Loading an external script without an integrity attribute, making the application vulnerable if the CDN is compromised.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// &lt;script src=&#34;https://cdn.example.com/lib.js&#34;&gt;&lt;/script&gt;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Add an &#39;integrity&#39; attribute with the cryptographic hash of the script.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Security Linter Rules Disabled JS-SMC-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A02:2025-Security Misconfiguration">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Security Linter Rules Disabled (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:42)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-SMC-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:42</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A02:2025-Security Misconfiguration</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-573</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Security-related ESLint rules have been explicitly disabled, which may mask vulnerabilities.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// eslint-disable-next-line no-eval</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Remove eslint-disable comments for security rules and fix the underlying issues.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Session Cookie HttpOnly Disabled PHP-A07-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A07:2025-Authentication Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Session Cookie HttpOnly Disabled (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:43)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A07-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:43</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A07:2025-Authentication Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1004</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Disabling HttpOnly for session cookies allows client-side scripts to access them (XSS session hijacking).</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Session issues (A07)
+ini_set(&#39;session.cookie_httponly&#39;, 0);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure session.cookie_httponly is set to 1.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Missing composer.lock PHP-A03-001 . MEDIUM A03:2025-Software Supply Chain Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Missing composer.lock (.:0)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A03-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> .:0</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A03:2025-Software Supply Chain Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1104</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>The project is missing a composer.lock file. This can lead to unrepeatable builds and unexpected supply chain vulnerabilities.</p>
+                        
+
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Commit the composer.lock file to your version control system.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Missing CSRF Token in Form PHP-A06-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A06:2025-Insecure Design">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Missing CSRF Token in Form (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:55)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A06-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:55</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A06:2025-Insecure Design</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-352</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>State-changing forms may lack anti-CSRF tokens, allowing Cross-Site Request Forgery.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Form without CSRF (A06)
+echo &#39;&lt;form method=&#34;post&#34; action=&#34;/transfer&#34;&gt;&#39;;
+echo &#39;&lt;input name=&#34;amount&#34;&gt;&#39;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Implement an anti-CSRF token pattern for all state-changing operations.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Sensitive Data Logged NODE-A09-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js MEDIUM A09:2025-Security Logging and Monitoring Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Sensitive Data Logged (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A09-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A09:2025-Security Logging and Monitoring Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-532</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>The application logs variables or objects that likely contain sensitive data (passwords, tokens, secrets).</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>console.log(&#34;User logged in with password:&#34;, password);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Redact or mask sensitive information before logging.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Weak Random Number Generator PHP-A04-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Weak Random Number Generator (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:40)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A04-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:40</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-338</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>rand(), mt_rand(), and uniqid() are not cryptographically secure.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>$token = rand();
+$csrf_token = mt_rand();
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use random_bytes() or random_int() for generating secure random values.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Potential Open Redirect JS-BAC-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A01:2025-Broken Access Control">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Potential Open Redirect (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:39)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-BAC-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:39</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A01:2025-Broken Access Control</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-601</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Dynamic value used for window.location redirection, potentially allowing open redirect attacks.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>window.location.href = params.get(&#39;redirect&#39;);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Validate the target URL against a strict allowlist or ensure it is a relative path before redirecting.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="API Call Without Authorization Header JS-BAC-003 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A01:2025-Broken Access Control">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        API Call Without Authorization Header (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-BAC-003</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A01:2025-Broken Access Control</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-862</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>API endpoints are called without an authorization header, which may indicate a missing authentication check or exposed endpoints.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>fetch(&#39;/api/data&#39;).catch(() =&gt; {});</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure sensitive API endpoints require authorization and include the appropriate token in the request headers.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Weak Random Number Generator PHP-A04-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Weak Random Number Generator (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:39)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A04-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:39</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-338</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>rand(), mt_rand(), and uniqid() are not cryptographically secure.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Weak randomness (A04)
+$token = rand();
+$csrf_token = mt_rand();</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use random_bytes() or random_int() for generating secure random values.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Sensitive Data Logged to Console JS-LF-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js LOW A09:2025-Security Logging and Monitoring Failures">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Sensitive Data Logged to Console (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-LF-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A09:2025-Security Logging and Monitoring Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-532</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Logging sensitive information to the console can expose it to anyone who inspects the browser developer tools.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>console.log(&#34;User logged in with password:&#34;, password);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Remove console statements that log sensitive data, especially in production environments.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Empty Catch Block JS-MEC-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js LOW A10:2025-Mishandling of Exceptional Conditions">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Empty Catch Block (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-MEC-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A10:2025-Mishandling of Exceptional Conditions</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-390</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Catching an exception but taking no action (empty block). This swallows errors and can hide security or logical issues.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>} catch (e) {}</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Handle the exception appropriately by logging the error or returning a safe state.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Verbose Error Reporting PHP-A02-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php LOW A02:2025-Security Misconfiguration">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Verbose Error Reporting (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:33)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A02-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:33</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A02:2025-Security Misconfiguration</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-209</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Setting error_reporting to E_ALL in code might override environment configurations, exposing too much info.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>ini_set(&#39;display_errors&#39;, 1);
+error_reporting(E_ALL);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure verbose error reporting is disabled in production.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Empty Catch Block NODE-A10-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js LOW A10:2025-Mishandling of Exceptional Conditions">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Empty Catch Block (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A10-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A10:2025-Mishandling of Exceptional Conditions</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-391</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>An exception is caught but silently ignored, masking errors and potentially leaving the application in an inconsistent state.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>} catch (e) {}</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Properly handle the error by logging it, recovering, or returning an appropriate response.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Empty Promise Catch JS-MEC-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx LOW A10:2025-Mishandling of Exceptional Conditions">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Empty Promise Catch (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-MEC-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A10:2025-Mishandling of Exceptional Conditions</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-390</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>A Promise rejection is caught but ignored, which can lead to unhandled exceptional conditions and inconsistent application state.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>fetch(&#39;/api/data&#39;).catch(() =&gt; {});</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Properly handle promise rejections, log them, or alert the user.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+            </div>
+        </div>
+    </div>
+
+<footer class="samuh-footer">
+        <p>Generated by <strong>SAMUH</strong> on <time datetime="2026-10-14T09:32:31-03:00">Oct 14, 2026 at 09:32:31 -03</time></p>
+        <p>
+            SAMUH is an open-source SAST Scanner for PHP, JS/TS, and Node.js, built by <strong>Gabriel G. R. Silva</strong>
+            <svg class="samuh-flag" role="img" aria-label="Brazil" viewBox="0 0 720 504" xmlns="http://www.w3.org/2000/svg">
+                <rect width="720" height="504" fill="#009b3a"/>
+                <polygon points="360,42 678,252 360,462 42,252" fill="#fedf00"/>
+                <circle cx="360" cy="252" r="105" fill="#002776"/>
+                <path d="M258,225 A145,145 0 0,1 462,265" fill="none" stroke="#ffffff" stroke-width="18"/>
+            </svg>
+        </p>
+        <p>
+            <a href="https://github.com/GabrielGRSilva/samuh" target="_blank" rel="noopener noreferrer">
+                View on GitHub &rarr;
+            </a>
+        </p>
+    </footer>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMUH Security Scan Report</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #dee2e6;
+            --header-bg: #343a40;
+            --header-text: #fff;
+            --primary: #007bff;
+            
+             
+            --sev-critical: #dc3545;
+            --sev-high: #fd7e14;
+            --sev-medium: #ffc107;
+            --sev-low: #17a2b8;
+            --sev-info: #6c757d;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #e0e0e0;
+                --card-bg: #1e1e1e;
+                --border-color: #333;
+                --header-bg: #222;
+                --header-text: #fff;
+                --primary: #375a7f;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .summary-stat {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(0,0,0,0.02);
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25em 0.4em;
+            font-size: 75%;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+            color: #fff;
+        }
+
+        .badge-CRITICAL { background-color: var(--sev-critical); }
+        .badge-HIGH { background-color: var(--sev-high); }
+        .badge-MEDIUM { background-color: var(--sev-medium); color: #212529; }
+        .badge-LOW { background-color: var(--sev-low); }
+        .badge-INFO { background-color: var(--sev-info); }
+
+        details {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        summary {
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            user-select: none;
+        }
+        
+        summary:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+
+        .finding-details {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            pre {
+                background-color: #2d2d2d;
+                border-color: #444;
+            }
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(0,0,0,0.02);
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .meta-item {
+            font-size: 0.9rem;
+        }
+        
+        .meta-label {
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.85rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .samuh-footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1.5rem 1rem;
+            border-top: 1px solid #2d3748;
+            color: #a0aec0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .samuh-footer p {
+            margin: 0.35rem 0;
+        }
+        .samuh-footer strong {
+            color: #e2e8f0;
+        }
+        .samuh-footer a {
+            color: #63b3ed;  
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s ease;
+        }
+        .samuh-footer a:hover,
+        .samuh-footer a:focus {
+            color: #90cdf4;
+            text-decoration: underline;
+        }
+        .samuh-flag {
+            display: inline-block;
+            width: 1.25em;
+            height: 0.9em;
+            vertical-align: -0.12em;
+            margin-left: 0.25rem;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ SAMUH Security Scanner</h1>
+        <div>v0.1.0</div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Scan Summary</h2>
+            <div class="grid">
+                <div>
+                    <div class="summary-stat">38</div>
+                    <div class="summary-label">Total Findings</div>
+                </div>
+                <div>
+                    <div class="summary-stat">36</div>
+                    <div class="summary-label">Files Scanned</div>
+                </div>
+                <div>
+                    <div class="summary-stat">0.06s</div>
+                    <div class="summary-label">Duration</div>
+                </div>
+                <div>
+                    <div class="summary-stat">.</div>
+                    <div class="summary-label">Project</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Findings by Severity</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td><span class="badge badge-CRITICAL">CRITICAL</span></td>
+                            <td>7</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-HIGH">HIGH</span></td>
+                            <td>16</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-LOW">LOW</span></td>
+                            <td>5</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-MEDIUM">MEDIUM</span></td>
+                            <td>10</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>OWASP Top 10</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>A01:2025-Broken Access Control</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A02:2025-Security Misconfiguration</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A03:2025-Software Supply Chain Failures</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A04:2025-Cryptographic Failures</td>
+                            <td>7</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A05:2025-Injection</td>
+                            <td>11</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A06:2025-Insecure Design</td>
+                            <td>1</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A07:2025-Authentication Failures</td>
+                            <td>2</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A08:2025-Software or Data Integrity Failures</td>
+                            <td>5</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A09:2025-Security Logging and Monitoring Failures</td>
+                            <td>3</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>A10:2025-Mishandling of Exceptional Conditions</td>
+                            <td>3</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Findings</h2>
+            <input type="text" id="searchInput" placeholder="Filter findings by text..." onkeyup="filterFindings()">
+            
+            <div id="findingsList">
+                
+                <details class="finding-item" data-text="OS Command Injection PHP-A05-003 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        OS Command Injection (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:15)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-003</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:15</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-78</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Passing user input to system shell execution functions enables OS command injection.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>system(&#34;cat &#34; . $file);
+exec(&#34;rm &#34; . $_GET[&#39;path&#39;]);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid shelling out if possible. If required, use escapeshellarg() and escapeshellcmd().</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Potential Code Injection (eval) NODE-A05-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Potential Code Injection (eval) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:23)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A05-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:23</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-94</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>User input is passed to a code execution function like eval() or Function constructor.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const result = eval(req.body.expression);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid using eval() or Function constructors. Use safer alternatives for parsing or executing logic.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Command Injection in exec() NODE-A05-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Command Injection in exec() (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:8)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A05-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:8</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-78</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>User input is concatenated into a system command executed via child_process.exec(), enabling command injection.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>child_process.exec(&#39;ls &#39; &#43; req.query.dir, (err, stdout) =&gt; {</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use child_process.execFile or spawn instead, and pass arguments as an array rather than a single string.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Local/Remote File Inclusion (LFI/RFI) PHP-A05-004 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Local/Remote File Inclusion (LFI/RFI) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:36)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-004</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:36</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-98</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Directly including files based on user input can execute arbitrary code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// File Inclusion (A05)
+include($_GET[&#39;page&#39;] . &#39;.php&#39;);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use a mapping or allowlist for includes. Never use user input directly in include/require.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Use of eval() PHP-A08-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Use of eval() (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:29)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A08-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:29</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-95</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>The eval() function executes arbitrary PHP code. It is extremely dangerous.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// eval (A08)
+eval($_POST[&#39;code&#39;]);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Refactor code to avoid the use of eval().</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Use of eval() PHP-A08-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Use of eval() (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:28)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A08-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:28</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-95</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>The eval() function executes arbitrary PHP code. It is extremely dangerous.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>
+// eval (A08)
+eval($_POST[&#39;code&#39;]);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Refactor code to avoid the use of eval().</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Insecure Deserialization PHP-A08-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php CRITICAL A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-CRITICAL" style="margin-right: 1rem;">CRITICAL</span>
+                        Insecure Deserialization (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:26)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A08-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:26</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-502</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Deserializing user-supplied input can lead to object injection and Remote Code Execution.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Insecure deserialization (A08)
+$data = unserialize($_COOKIE[&#39;session_data&#39;]);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use a safe data format like JSON (json_decode) instead of serialize/unserialize.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Code Injection via eval/setTimeout JS-INJ-006 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Code Injection via eval/setTimeout (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:36)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-006</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:36</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-94</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Using eval(), new Function(), setTimeout(), or setInterval() with dynamic strings allows arbitrary code execution.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>setTimeout(&#34;doSomething(&#39;&#34; &#43; userInput &#43; &#34;&#39;)&#34;, 100);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid these functions entirely or pass function references instead of strings.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:17)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:17</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const API_KEY = &#34;AIzaSyB1234567890abcdef&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="DOM XSS via innerHTML JS-INJ-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        DOM XSS via innerHTML (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:4)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:4</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Assigning values directly to innerHTML/outerHTML can lead to Cross-Site Scripting (XSS) if the data is untrusted.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>document.getElementById(&#39;output&#39;).innerHTML = userInput;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use textContent or DOM manipulation methods (createElement) instead, or sanitize input using DOMPurify.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Weak Hashing Algorithm (MD5/SHA1) NODE-A04-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Weak Hashing Algorithm (MD5/SHA1) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:33)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A04-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:33</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-328</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Use of MD5 or SHA1 for hashing is insecure. These algorithms are vulnerable to collision attacks.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const hash = crypto.createHash(&#39;md5&#39;).update(password).digest(&#39;hex&#39;);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use strong hashing algorithms like SHA-256 (sha256) or SHA-3.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="DOM XSS via document.write JS-INJ-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        DOM XSS via document.write (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:5)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:5</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Using document.write() with user input can lead to XSS vulnerabilities.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>document.write(location.hash);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid document.write(). Use safe DOM manipulation methods instead.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Credentials in URL JS-AF-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A07:2025-Authentication Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Credentials in URL (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:46)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-AF-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:46</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A07:2025-Authentication Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-598</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Sensitive data is passed via URL parameters, where it can be logged in browser history, proxy logs, or referer headers.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>fetch(`https://api.example.com?api_key=${apiKey}&amp;secret=${secret}`);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Pass sensitive credentials securely in the request body (POST) or in HTTP headers.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Vue v-html Directive JS-INJ-004 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Vue v-html Directive (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-004</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Using the v-html directive in Vue renders raw HTML and can lead to XSS if the content is untrusted.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// &lt;div v-html=&#34;userContent&#34;&gt;&lt;/div&gt;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Sanitize the content before binding it to v-html, or use standard text interpolation ({{ }}).</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="React dangerouslySetInnerHTML JS-INJ-003 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        React dangerouslySetInnerHTML (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:9)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-INJ-003</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:9</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Using dangerouslySetInnerHTML in React bypasses built-in XSS protections.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>return &lt;div dangerouslySetInnerHTML={{ __html: bio }} /&gt;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure data passed to dangerouslySetInnerHTML is strictly sanitized, or use standard React rendering.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Cross-Site Scripting (XSS) via Unsanitized Input PHP-A05-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Cross-Site Scripting (XSS) via Unsanitized Input (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:9)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:9</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Directly outputting user input without encoding can lead to Reflected XSS.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// XSS (A05)
+echo $_GET[&#39;name&#39;];
+echo &#34;&lt;h1&gt;&#34; . $_REQUEST[&#39;title&#39;] . &#34;&lt;/h1&gt;&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use htmlspecialchars() with ENT_QUOTES | ENT_HTML5 to escape output.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Cross-Site Scripting (XSS) via Unsanitized Input PHP-A05-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php HIGH A05:2025-Injection">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Cross-Site Scripting (XSS) via Unsanitized Input (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:10)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A05-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:10</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A05:2025-Injection</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-79</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Directly outputting user input without encoding can lead to Reflected XSS.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>echo $_GET[&#39;name&#39;];
+echo &#34;&lt;h1&gt;&#34; . $_REQUEST[&#39;title&#39;] . &#34;&lt;/h1&gt;&#34;;
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use htmlspecialchars() with ENT_QUOTES | ENT_HTML5 to escape output.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:29)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:29</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const API_KEY = &#34;sk_live_abcdef123456&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Prototype Pollution Vulnerability JS-DIF-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Prototype Pollution Vulnerability (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:22)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-DIF-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:22</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1321</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Direct use of __proto__ or constructor.prototype can lead to prototype pollution, altering object behavior.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>obj.constructor.prototype.isAdmin = true;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid direct manipulation of prototypes. Use Object.create(null) for dictionary objects.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Prototype Pollution Vulnerability JS-DIF-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A08:2025-Software or Data Integrity Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Prototype Pollution Vulnerability (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:21)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-DIF-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:21</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A08:2025-Software or Data Integrity Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1321</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Direct use of __proto__ or constructor.prototype can lead to prototype pollution, altering object behavior.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>obj.__proto__.admin = true;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Avoid direct manipulation of prototypes. Use Object.create(null) for dictionary objects.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:18)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:18</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const SECRET = &#34;ghp_1234567890abcdef1234567890abcdef12&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Hardcoded Credentials JS-CRY-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js HIGH A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Hardcoded Credentials (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:28)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-CRY-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:28</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-798</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Sensitive credentials such as API keys or secrets are hardcoded in the source code.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>const JWT_SECRET = &#34;my-super-secret-key-12345&#34;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Store credentials securely using environment variables or a secrets manager.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Sensitive Data in Logs PHP-A09-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php HIGH A09:2025-Security Logging and Monitoring Failures">
+                    <summary>
+                        <span class="badge badge-HIGH" style="margin-right: 1rem;">HIGH</span>
+                        Sensitive Data in Logs (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A09-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A09:2025-Security Logging and Monitoring Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-532</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Logging sensitive variables like passwords or tokens may expose them.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Logging secrets (A09)
+error_log(&#34;User login with password: &#34; . $password);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Sanitize log entries to ensure no sensitive credentials or tokens are logged.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Missing Subresource Integrity (SRI) JS-SSC-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A03:2025-Software Supply Chain Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Missing Subresource Integrity (SRI) (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:55)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-SSC-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:55</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A03:2025-Software Supply Chain Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-829</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Loading an external script without an integrity attribute, making the application vulnerable if the CDN is compromised.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// &lt;script src=&#34;https://cdn.example.com/lib.js&#34;&gt;&lt;/script&gt;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Add an &#39;integrity&#39; attribute with the cryptographic hash of the script.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Security Linter Rules Disabled JS-SMC-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A02:2025-Security Misconfiguration">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Security Linter Rules Disabled (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:42)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-SMC-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:42</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A02:2025-Security Misconfiguration</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-573</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Security-related ESLint rules have been explicitly disabled, which may mask vulnerabilities.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// eslint-disable-next-line no-eval</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Remove eslint-disable comments for security rules and fix the underlying issues.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Session Cookie HttpOnly Disabled PHP-A07-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A07:2025-Authentication Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Session Cookie HttpOnly Disabled (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:43)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A07-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:43</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A07:2025-Authentication Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1004</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Disabling HttpOnly for session cookies allows client-side scripts to access them (XSS session hijacking).</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Session issues (A07)
+ini_set(&#39;session.cookie_httponly&#39;, 0);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure session.cookie_httponly is set to 1.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Missing composer.lock PHP-A03-001 . MEDIUM A03:2025-Software Supply Chain Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Missing composer.lock (.:0)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A03-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> .:0</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A03:2025-Software Supply Chain Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-1104</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>The project is missing a composer.lock file. This can lead to unrepeatable builds and unexpected supply chain vulnerabilities.</p>
+                        
+
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Commit the composer.lock file to your version control system.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Missing CSRF Token in Form PHP-A06-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A06:2025-Insecure Design">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Missing CSRF Token in Form (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:55)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A06-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:55</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A06:2025-Insecure Design</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-352</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>State-changing forms may lack anti-CSRF tokens, allowing Cross-Site Request Forgery.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Form without CSRF (A06)
+echo &#39;&lt;form method=&#34;post&#34; action=&#34;/transfer&#34;&gt;&#39;;
+echo &#39;&lt;input name=&#34;amount&#34;&gt;&#39;;</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Implement an anti-CSRF token pattern for all state-changing operations.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Sensitive Data Logged NODE-A09-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js MEDIUM A09:2025-Security Logging and Monitoring Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Sensitive Data Logged (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A09-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A09:2025-Security Logging and Monitoring Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-532</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>The application logs variables or objects that likely contain sensitive data (passwords, tokens, secrets).</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>console.log(&#34;User logged in with password:&#34;, password);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Redact or mask sensitive information before logging.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Weak Random Number Generator PHP-A04-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Weak Random Number Generator (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:40)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A04-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:40</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-338</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>rand(), mt_rand(), and uniqid() are not cryptographically secure.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>$token = rand();
+$csrf_token = mt_rand();
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use random_bytes() or random_int() for generating secure random values.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Potential Open Redirect JS-BAC-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A01:2025-Broken Access Control">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Potential Open Redirect (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:39)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-BAC-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:39</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A01:2025-Broken Access Control</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-601</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>Dynamic value used for window.location redirection, potentially allowing open redirect attacks.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>window.location.href = params.get(&#39;redirect&#39;);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Validate the target URL against a strict allowlist or ensure it is a relative path before redirecting.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="API Call Without Authorization Header JS-BAC-003 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx MEDIUM A01:2025-Broken Access Control">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        API Call Without Authorization Header (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-BAC-003</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A01:2025-Broken Access Control</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-862</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> LOW</div>
+                        </div>
+
+                        
+                        <p>API endpoints are called without an authorization header, which may indicate a missing authentication check or exposed endpoints.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>fetch(&#39;/api/data&#39;).catch(() =&gt; {});</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure sensitive API endpoints require authorization and include the appropriate token in the request headers.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Weak Random Number Generator PHP-A04-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php MEDIUM A04:2025-Cryptographic Failures">
+                    <summary>
+                        <span class="badge badge-MEDIUM" style="margin-right: 1rem;">MEDIUM</span>
+                        Weak Random Number Generator (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:39)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A04-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:39</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A04:2025-Cryptographic Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-338</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>rand(), mt_rand(), and uniqid() are not cryptographically secure.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>// Weak randomness (A04)
+$token = rand();
+$csrf_token = mt_rand();</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Use random_bytes() or random_int() for generating secure random values.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Sensitive Data Logged to Console JS-LF-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js LOW A09:2025-Security Logging and Monitoring Failures">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Sensitive Data Logged to Console (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-LF-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:52</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A09:2025-Security Logging and Monitoring Failures</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-532</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Logging sensitive information to the console can expose it to anyone who inspects the browser developer tools.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>console.log(&#34;User logged in with password:&#34;, password);</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Remove console statements that log sensitive data, especially in production environments.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Empty Catch Block JS-MEC-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js LOW A10:2025-Mishandling of Exceptional Conditions">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Empty Catch Block (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-MEC-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A10:2025-Mishandling of Exceptional Conditions</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-390</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>Catching an exception but taking no action (empty block). This swallows errors and can hide security or logical issues.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>} catch (e) {}</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Handle the exception appropriately by logging the error or returning a safe state.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Verbose Error Reporting PHP-A02-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php LOW A02:2025-Security Misconfiguration">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Verbose Error Reporting (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:33)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> PHP-A02-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\php\vulnerable.php:33</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A02:2025-Security Misconfiguration</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-209</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> MEDIUM</div>
+                        </div>
+
+                        
+                        <p>Setting error_reporting to E_ALL in code might override environment configurations, exposing too much info.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>ini_set(&#39;display_errors&#39;, 1);
+error_reporting(E_ALL);
+</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Ensure verbose error reporting is disabled in production.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Empty Catch Block NODE-A10-001 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js LOW A10:2025-Mishandling of Exceptional Conditions">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Empty Catch Block (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> NODE-A10-001</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\node\server.js:57</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A10:2025-Mishandling of Exceptional Conditions</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-391</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>An exception is caught but silently ignored, masking errors and potentially leaving the application in an inconsistent state.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>} catch (e) {}</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Properly handle the error by logging it, recovering, or returning an appropriate response.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+                <details class="finding-item" data-text="Empty Promise Catch JS-MEC-002 C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx LOW A10:2025-Mishandling of Exceptional Conditions">
+                    <summary>
+                        <span class="badge badge-LOW" style="margin-right: 1rem;">LOW</span>
+                        Empty Promise Catch (C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30)
+                    </summary>
+                    <div class="finding-details">
+                        <div class="meta-grid">
+                            <div class="meta-item"><span class="meta-label">Rule ID:</span> JS-MEC-002</div>
+                            <div class="meta-item"><span class="meta-label">File:</span> C:\Users\Linux\Documents\Otherprojects\SAMUH\testdata\javascript\app.jsx:30</div>
+                            <div class="meta-item"><span class="meta-label">OWASP:</span> A10:2025-Mishandling of Exceptional Conditions</div>
+                            <div class="meta-item"><span class="meta-label">CWE:</span> CWE-390</div>
+                            <div class="meta-item"><span class="meta-label">Confidence:</span> HIGH</div>
+                        </div>
+
+                        
+                        <p>A Promise rejection is caught but ignored, which can lead to unhandled exceptional conditions and inconsistent application state.</p>
+                        
+
+                        
+                        <h4>Code Snippet</h4>
+                        <pre><code>fetch(&#39;/api/data&#39;).catch(() =&gt; {});</code></pre>
+                        
+
+                        
+                        <h4>Remediation</h4>
+                        <p>Properly handle promise rejections, log them, or alert the user.</p>
+                        
+
+                        
+                    </div>
+                </details>
+                
+            </div>
+        </div>
+    </div>
+
+    <footer class="samuh-footer">
+        <p>Generated by <strong>SAMUH</strong> on <time datetime="2026-10-14T09:33:06-03:00">Oct 14, 2026 at 09:33:06 -03</time></p>
+        <p>
+            SAMUH is an open-source SAST Scanner for PHP, JS/TS, and Node.js, built by <strong>Gabriel G. R. Silva</strong>
+            <svg class="samuh-flag" role="img" aria-label="Brazil" viewBox="0 0 720 504" xmlns="http://www.w3.org/2000/svg">
+                <rect width="720" height="504" fill="#009b3a"/>
+                <polygon points="360,42 678,252 360,462 42,252" fill="#fedf00"/>
+                <circle cx="360" cy="252" r="105" fill="#002776"/>
+                <path d="M258,225 A145,145 0 0,1 462,265" fill="none" stroke="#ffffff" stroke-width="18"/>
+            </svg>
+        </p>
+        <p>
+            <a href="https://github.com/GabrielGRSilva/samuh" target="_blank" rel="noopener noreferrer">
+                View on GitHub &rarr;
+            </a>
+        </p>
+    </footer>
+</body>
+</html>
