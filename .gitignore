@@ -80,5 +80,6 @@ scratch/
 dist/
 build/
 
-# ---- Personal notes ----
+# ---- Personal notes and files ----
 docs/personalnotes.md
+testdata/personaltests/
