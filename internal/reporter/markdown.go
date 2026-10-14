@@ -101,9 +101,10 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 					buf.WriteString(fmt.Sprintf("- **CWE:** %s\n", f.CWE))
 				}
 				buf.WriteString(fmt.Sprintf("- **Confidence:** %s\n\n", string(f.Confidence)))
-				
+
 				if f.Description != "" {
-					buf.WriteString(f.Description + "\n\n")
+					buf.WriteString(f.Description)
+					buf.WriteString("\n\n")
 				}
 
 				if f.Snippet != "" {
@@ -118,7 +119,8 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 
 				if f.Remediation != "" {
 					buf.WriteString("**Remediation:**\n")
-					buf.WriteString(f.Remediation + "\n\n")
+					buf.WriteString(f.Remediation)
+					buf.WriteString("\n\n")
 				}
 
 				if len(f.References) > 0 {
