@@ -83,3 +83,4 @@ build/
 # ---- Personal notes and files ----
 docs/personalnotes.md
 testdata/personaltests/
+scan.html
