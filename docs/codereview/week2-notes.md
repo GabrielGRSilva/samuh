@@ -1,0 +1,4 @@
+# Week 2: Aggregations, Memory & JSON
+- **Map Aggregations:** Implemented nested loops to aggregate vulnerability counts. Because a single finding (e.g., hardcoded JWT) can violate multiple NIST categories (PR-Protect and DE-Detect), the NIST category total will always exceed the total number of findings.
+- **JSON & Zero-Values:** Tested the behavior difference between uninitialized (`nil`) and empty (`[]`) slices. This is critical in Go because a `nil` slice serializes to `null` in JSON, which can easily crash a downstream JavaScript frontend attempting to iterate over it.
+- **Slice Aliasing:** Demonstrated that slicing an array in Go copies only the pointer (the Slice Header), not the physical data in memory. Modifying a sub-slice inherently mutates the original data, highlighting the need for caution when passing data slices between worker pools in SAMUH.
