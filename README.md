@@ -516,6 +516,38 @@ SAMUH is specifically focused on **security vulnerabilities** (not code quality 
 
 ---
 
+## 🗺️ Roadmap
+
+SAMUH aims to continue being a fast, offline, pattern-based scanner. The items below aim to improve its features with that objective in mind, but they do not aim to turn SAMUH into an Abstract Syntax Tree (AST) or data-flow analyzer. 
+
+While this may change in the future, I believe a firm and well determined scope allows the project to evolve more efficiently and with less problems than if I tried to embrace everything at once.
+
+### Next
+- [ ] Honor `--no-color` and `NO_COLOR` so CI logs are plain text;
+- [ ] Add suggested tests against `testdata/` for every report format;
+- [ ] Publish a `go install` path and release binaries;
+- [ ] Add a `--fail-on` flag so teams can determine which severity fails the build;
+- [ ] Add a `.samuh.yaml` config file for repeatable scan settings (so users won't have to repeat a bunch of flags everytime if they desire a certain report pattern as standard);
+- [ ] Fix directory excludes to match real paths, and deduplicate findings;
+
+### Considering
+- [ ] Suppressions: inline `samuh-ignore` comments and a baseline file;
+- [ ] A `--confidence` filter;
+- [ ] Stronger project checks for `yarn.lock`, `pnpm-lock.yaml`, and nested manifests;
+- [ ] An opt-in dependency advisory lookup (kept off by default to preserve the offline promise);
+- [ ] A `samuh rules` command that prints the rule catalog;
+- [ ] A Python analyzer🐍;
+- [ ] Rules stored as data (YAML) instead of Go slices;
+- [ ] A diff scan (`--changed-since`) for pull requests;
+
+### Not Planned
+*These exclusions protect SAMUH's scope as a fast, pattern-based scanner.*
+- Abstract Syntax Tree (AST) parsing or cross-file taint tracking
+- Scanning third-party directories (`node_modules/`, `vendor/`)
+- Replacing enterprise SAST or dedicated dependency scanners (npm audit, Dependabot, CodeQL)
+
+---
+
 ## 📄 License
 
 MIT — see [LICENSE](LICENSE).
