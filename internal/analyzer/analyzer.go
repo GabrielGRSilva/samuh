@@ -22,7 +22,7 @@ type FileContext struct {
 
 // Analyzer detects vulnerabilities in files of its supported language(s).
 type Analyzer interface {
-	FileName() string
+	Name() string
 	Extensions() []string
 	Analyze(ctx context.Context, file FileContext) ([]rules.Finding, error)
 	AnalyzeProject(ctx context.Context, projectRoot string) ([]rules.Finding, error)
