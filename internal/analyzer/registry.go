@@ -6,8 +6,7 @@ import (
 	"sync"
 )
 
-// Registry manages the available language analyzers.
-// It is safe for concurrent use.
+// Registry manages the available language analyzers and is safe for concurrent use.
 type Registry struct {
 	mu        sync.RWMutex
 	analyzers map[string]Analyzer
@@ -22,8 +21,7 @@ func NewRegistry() *Registry {
 	}
 }
 
-// Register adds an analyzer to the registry.
-// It returns an error if an analyzer with the same name is already registered.
+// Register adds a, failing if an analyzer with the same name is already registered.
 func (r *Registry) Register(a Analyzer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -93,25 +91,21 @@ func (r *Registry) Names() []string {
 	return result
 }
 
-// DefaultRegistry creates a registry with all built-in analyzers pre-registered.
-// Language-specific analyzers register themselves via this function.
+var (
+	defaultMu        sync.Mutex
+	defaultAnalyzers []Analyzer
+)
+
+// DefaultRegistry returns a registry containing every analyzer added via RegisterDefault.
 func DefaultRegistry() *Registry {
 	r := NewRegistry()
-	// Built-in analyzers are registered by their init() functions
-	// via RegisterDefault(). See each analyzer package.
 	for _, a := range defaultAnalyzers {
 		_ = r.Register(a)
 	}
 	return r
 }
 
-var (
-	defaultMu        sync.Mutex
-	defaultAnalyzers []Analyzer
-)
-
-// RegisterDefault adds an analyzer to the list of defaults.
-// This is typically called from init() functions in analyzer packages.
+// RegisterDefault adds a to the default analyzers; call it from analyzer init() functions.
 func RegisterDefault(a Analyzer) {
 	defaultMu.Lock()
 	defer defaultMu.Unlock()

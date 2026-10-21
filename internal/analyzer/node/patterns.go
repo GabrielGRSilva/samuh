@@ -2,6 +2,7 @@ package node
 
 import (
 	"regexp"
+
 	"samuh/internal/rules"
 )
 
@@ -262,8 +263,6 @@ var nodePatterns = []pattern{
 	// A06 - Insecure Design
 	{
 		regex: regexp.MustCompile(`csrf\(\s*(?:\{\s*ignoreMethods:\s*\[[^\]]+['"](?:GET|POST|PUT|DELETE)['"][^\]]+\])?\)`),
-		// Since regex for "missing" CSRF is hard, we look for misconfigured CSRF or we just provide this placeholder.
-		// Let's actually look for disabled CSRF protection in express apps.
 		rule: rules.Rule{
 			ID:          "NODE-A06-001",
 			Title:       "Disabled CSRF Protection",
@@ -277,7 +276,6 @@ var nodePatterns = []pattern{
 			Languages:   []string{"Node.js"},
 		},
 	},
-	// We'll catch missing rate-limit at the package.json level later.
 
 	// A07 - Authentication Failures
 	{
@@ -326,7 +324,7 @@ var nodePatterns = []pattern{
 		},
 	},
 
-	// A08 - Data Integrity Failures
+	// A08 - Software or Data Integrity Failures
 	{
 		regex: regexp.MustCompile(`(?:serialize\.unserialize|deserialize)\s*\(\s*req\.(query|body|params)\.[a-zA-Z0-9_]+`),
 		rule: rules.Rule{
@@ -358,7 +356,7 @@ var nodePatterns = []pattern{
 		},
 	},
 
-	// A09 - Logging Failures
+	// A09 - Security Logging and Monitoring Failures
 	{
 		regex: regexp.MustCompile(`console\.(?:log|error|warn|info)\s*\([^)]*(?:password|token|secret|key)[^)]*\)`),
 		rule: rules.Rule{

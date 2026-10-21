@@ -1,14 +1,12 @@
-// Package rules - nist.go provides the NIST CSF 2.0 catalog with
-// detailed descriptions for each function and its categories.
 package rules
 
 // NISTInfo contains details about a NIST CSF 2.0 function.
 type NISTInfo struct {
-	ID          string   // ID is the short identifier (e.g., "GV").
-	Name        string   // Name is the human-readable function name.
-	Description string   // Description explains what the function covers.
-	URL         string   // URL links to the NIST CSF documentation.
-	Categories  []string // Categories lists the category identifiers within this function.
+	ID          string // e.g., "GV"
+	Name        string
+	Description string
+	URL         string
+	Categories  []string // e.g., "GV.OC"
 }
 
 // NISTCatalog maps each NIST CSF 2.0 function to its detailed information.

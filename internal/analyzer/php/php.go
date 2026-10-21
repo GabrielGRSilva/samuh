@@ -47,7 +47,7 @@ func (a *PHPAnalyzer) Analyze(ctx context.Context, file analyzer.FileContext) ([
 				start := matches[0]
 				end := matches[1]
 
-				// Extract snippet (up to 3 lines of context)
+				// Snippet includes one line of context on each side.
 				snippetStart := i - 1
 				if snippetStart < 0 {
 					snippetStart = 0
@@ -65,9 +65,9 @@ func (a *PHPAnalyzer) Analyze(ctx context.Context, file analyzer.FileContext) ([
 					Description:  pat.Rule.Description,
 					Severity:     pat.Rule.Severity,
 					Confidence:   pat.Rule.Confidence,
-					FilePath:     file.Path, // Assuming absolute path; usually RelativePath is preferred in reporting but we provide Path
+					FilePath:     file.Path,
 					Line:         lineNum,
-					Column:       start + 1, // 1-based column
+					Column:       start + 1,
 					EndLine:      lineNum,
 					Snippet:      snippet,
 					MatchContent: line[start:end],
@@ -86,8 +86,7 @@ func (a *PHPAnalyzer) Analyze(ctx context.Context, file analyzer.FileContext) ([
 	return findings, nil
 }
 
-// AnalyzeProject performs project-level checks, such as examining composer.json
-// and composer.lock for Software Supply Chain issues (A03).
+// AnalyzeProject checks composer.json and composer.lock for supply chain issues (A03).
 func (a *PHPAnalyzer) AnalyzeProject(ctx context.Context, projectRoot string) ([]rules.Finding, error) {
 	var findings []rules.Finding
 

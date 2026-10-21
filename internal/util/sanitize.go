@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// SanitizeSnippet truncates code snippets safely and cleans non-printable characters
+// SanitizeSnippet strips non-printable control characters and truncates to maxLen.
 func SanitizeSnippet(code string, maxLen int) string {
 	cleaned := strings.Map(func(r rune) rune {
 		if r == '\n' || r == '\r' || r == '\t' {
@@ -20,12 +20,12 @@ func SanitizeSnippet(code string, maxLen int) string {
 	return TruncateString(cleaned, maxLen)
 }
 
-// SanitizeFilePath cleans file paths for display, ensuring no unexpected traversal elements
+// SanitizeFilePath cleans a file path for display.
 func SanitizeFilePath(path string) string {
 	return filepath.Clean(path)
 }
 
-// TruncateString safely truncates a string to a max length
+// TruncateString truncates s to maxLen bytes, adding "..." when there is room.
 func TruncateString(s string, maxLen int) string {
 	if maxLen <= 0 {
 		return ""

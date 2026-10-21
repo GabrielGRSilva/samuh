@@ -11,14 +11,14 @@ import (
 	"samuh/internal/util"
 )
 
-// Scanner handles file discovery and content extraction
+// Scanner handles file discovery and content extraction.
 type Scanner struct {
 	basePath    string
 	excludes    []string
 	maxFileSize int64
 }
 
-// New creates a new Scanner
+// New creates a new Scanner.
 func New(basePath string, excludes []string, maxFileSize int64) *Scanner {
 	return &Scanner{
 		basePath:    basePath,
@@ -27,7 +27,7 @@ func New(basePath string, excludes []string, maxFileSize int64) *Scanner {
 	}
 }
 
-// DiscoverFiles walks the directory tree and returns files to be analyzed
+// DiscoverFiles walks the directory tree and returns files to be analyzed.
 func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, error) {
 	var files []*analyzer.FileContext
 
@@ -47,15 +47,11 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		default:
 		}
 
-		// Skip hidden directories and dependency folders
+		// Skip hidden directories and dependency folders.
 		if info.IsDir() {
 			name := info.Name()
-			if strings.HasPrefix(name, ".") {
-				if name == "." || name == ".." {
-					// keep going
-				} else {
-					return filepath.SkipDir
-				}
+			if strings.HasPrefix(name, ".") && name != "." && name != ".." {
+				return filepath.SkipDir
 			}
 			if name == "node_modules" || name == "vendor" || name == "bower_components" {
 				return filepath.SkipDir
@@ -63,12 +59,10 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			return nil
 		}
 
-		// Check file size
 		if info.Size() > s.maxFileSize {
 			return nil
 		}
 
-		// Check exclusions
 		relPath, _ := filepath.Rel(absBasePath, path)
 		for _, pattern := range s.excludes {
 			if matched, _ := filepath.Match(pattern, relPath); matched {
@@ -79,12 +73,10 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			}
 		}
 
-		// Safety: resolve symlinks and verify the file is within the project root.
-		// This prevents a malicious project from using symlinks to read files
-		// outside the project directory (e.g., /etc/shadow).
+		// Resolve symlinks so a malicious project cannot make us read files outside its root.
 		realPath, evalErr := filepath.EvalSymlinks(path)
 		if evalErr != nil {
-			return nil // Skip files whose real path can't be resolved
+			return nil
 		}
 		realBase, _ := filepath.EvalSymlinks(absBasePath)
 		if realBase == "" {
@@ -92,17 +84,14 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		}
 		if !strings.HasPrefix(filepath.Clean(realPath), filepath.Clean(realBase)+string(filepath.Separator)) &&
 			filepath.Clean(realPath) != filepath.Clean(realBase) {
-			// File resolves outside the project root — skip it
 			return nil
 		}
 
-		// Read full content for the Content field
 		fullContent, readErr2 := os.ReadFile(path)
 		if readErr2 != nil {
-			return nil // Skip files we can't read
+			return nil
 		}
 
-		// Check if it's a binary file
 		checkLen := len(fullContent)
 		if checkLen > 512 {
 			checkLen = 512
@@ -111,13 +100,11 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			return nil
 		}
 
-		// Prepare lines
 		lines, err := util.ReadFileLines(path, s.maxFileSize)
 		if err != nil {
-			return nil // Skip files we can't read
+			return nil
 		}
 
-		// Detect language from extension
 		ext := strings.ToLower(filepath.Ext(path))
 		language := detectLanguage(ext)
 

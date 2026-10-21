@@ -2,6 +2,7 @@ package reporter
 
 import (
 	"encoding/json"
+
 	"samuh/internal/rules"
 )
 
@@ -11,20 +12,6 @@ type SARIFReporter struct{}
 // Format returns the format of this reporter.
 func (r *SARIFReporter) Format() Format {
 	return FormatSARIF
-}
-
-// severityToSarifLevel maps SAMUH severities to SARIF levels.
-func severityToSarifLevel(s rules.Severity) string {
-	switch s {
-	case rules.SeverityCritical, rules.SeverityHigh:
-		return "error"
-	case rules.SeverityMedium:
-		return "warning"
-	case rules.SeverityLow, rules.SeverityInfo:
-		return "note"
-	default:
-		return "none"
-	}
 }
 
 // Generate produces the SARIF report content as bytes.
@@ -112,7 +99,21 @@ func (r *SARIFReporter) FileExtension() string {
 	return ".sarif"
 }
 
-// SARIF Types
+// severityToSarifLevel maps SAMUH severities to SARIF levels.
+func severityToSarifLevel(s rules.Severity) string {
+	switch s {
+	case rules.SeverityCritical, rules.SeverityHigh:
+		return "error"
+	case rules.SeverityMedium:
+		return "warning"
+	case rules.SeverityLow, rules.SeverityInfo:
+		return "note"
+	default:
+		return "none"
+	}
+}
+
+// SARIF 2.1.0 schema types.
 
 type sarifDocument struct {
 	Version string     `json:"version"`

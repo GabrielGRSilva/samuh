@@ -1,14 +1,12 @@
-// Package rules - owasp.go provides the OWASP Top 10:2025 catalog with
-// detailed descriptions and CWE mappings for each category.
 package rules
 
 // OWASPInfo contains details about an OWASP Top 10:2025 category.
 type OWASPInfo struct {
-	ID          string   // ID is the short identifier (e.g., "A01:2025").
-	Name        string   // Name is the human-readable category name.
-	Description string   // Description explains what the category covers.
-	URL         string   // URL links to the official OWASP page for this category.
-	CWEs        []string // CWEs lists common CWE identifiers associated with this category.
+	ID          string // e.g., "A01:2025"
+	Name        string
+	Description string
+	URL         string
+	CWEs        []string // common CWEs associated with the category
 }
 
 // OWASPCatalog maps each OWASP Top 10:2025 category to its detailed information.

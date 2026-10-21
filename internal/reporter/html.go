@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"samuh/internal/rules"
 	"time"
+
+	"samuh/internal/rules"
 )
 
 // HTMLReporter generates a standalone HTML report.
@@ -31,7 +32,7 @@ const htmlTemplate = `<!DOCTYPE html>
             --header-bg: #343a40;
             --header-text: #fff;
             --primary: #007bff;
-            
+
             /* Severities */
             --sev-critical: #dc3545;
             --sev-high: #fd7e14;
@@ -70,7 +71,7 @@ const htmlTemplate = `<!DOCTYPE html>
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .header h1 {
             margin: 0;
             font-size: 1.5rem;
@@ -116,7 +117,7 @@ const htmlTemplate = `<!DOCTYPE html>
             border-collapse: collapse;
             margin-top: 1rem;
         }
-        
+
         th, td {
             padding: 0.75rem;
             border-bottom: 1px solid var(--border-color);
@@ -162,7 +163,7 @@ const htmlTemplate = `<!DOCTYPE html>
             align-items: center;
             user-select: none;
         }
-        
+
         summary:hover {
             background-color: rgba(0,0,0,0.02);
         }
@@ -181,7 +182,7 @@ const htmlTemplate = `<!DOCTYPE html>
             font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             font-size: 0.875rem;
         }
-        
+
         @media (prefers-color-scheme: dark) {
             pre {
                 background-color: #2d2d2d;
@@ -202,7 +203,7 @@ const htmlTemplate = `<!DOCTYPE html>
         .meta-item {
             font-size: 0.9rem;
         }
-        
+
         .meta-label {
             font-weight: bold;
             margin-right: 0.5rem;
@@ -235,23 +236,28 @@ const htmlTemplate = `<!DOCTYPE html>
             font-size: 0.9rem;
             line-height: 1.6;
         }
+
         .samuh-footer p {
             margin: 0.35rem 0;
         }
+
         .samuh-footer strong {
             color: #e2e8f0;
         }
+
         .samuh-footer a {
-            color: #63b3ed; /* High-contrast sky blue for dark mode */
+            color: #63b3ed;
             text-decoration: none;
             font-weight: 600;
             transition: color 0.15s ease;
         }
+
         .samuh-footer a:hover,
         .samuh-footer a:focus {
             color: #90cdf4;
             text-decoration: underline;
         }
+
         .samuh-flag {
             display: inline-block;
             width: 1.25em;
@@ -336,7 +342,7 @@ const htmlTemplate = `<!DOCTYPE html>
         <div class="card">
             <h2>Findings</h2>
             <input type="text" id="searchInput" placeholder="Filter findings by text..." onkeyup="filterFindings()">
-            
+
             <div id="findingsList">
                 {{range .Findings}}
                 <details class="finding-item" data-text="{{.Title}} {{.RuleID}} {{.FilePath}} {{.Severity}} {{.OWASP}}">
@@ -402,18 +408,13 @@ const htmlTemplate = `<!DOCTYPE html>
 </body>
 </html>`
 
-// FileExtension returns the file extension for HTML reports.
-func (r *HTMLReporter) FileExtension() string {
-	return ".html"
-}
-
 // Generate produces the HTML report content as bytes.
 func (r *HTMLReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	funcMap := template.FuncMap{
 		"formatTime": func(raw string) string {
 			t, err := time.Parse(time.RFC3339, raw)
 			if err != nil {
-				return raw // Safe fallback if timestamp isn't RFC3339
+				return raw
 			}
 			return t.Format("Jan 02, 2006 at 15:04:05 MST")
 		},
@@ -430,4 +431,9 @@ func (r *HTMLReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// FileExtension returns the file extension for HTML reports.
+func (r *HTMLReporter) FileExtension() string {
+	return ".html"
 }

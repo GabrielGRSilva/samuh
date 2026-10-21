@@ -73,9 +73,10 @@ debug
 __debug_bin*
 *.log
 
-# ---- Scratch / temp files ----
+# ---- Scratch / temp files / plans ----
 tmp/
 temp/
 scratch/
 dist/
 build/
+.cursor/

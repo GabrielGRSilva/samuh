@@ -2,6 +2,7 @@ package javascript
 
 import (
 	"regexp"
+
 	"samuh/internal/rules"
 )
 

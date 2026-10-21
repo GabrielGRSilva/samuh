@@ -42,18 +42,16 @@ func (a *NodeAnalyzer) Extensions() []string {
 func (a *NodeAnalyzer) Analyze(ctx context.Context, file analyzer.FileContext) ([]rules.Finding, error) {
 	var findings []rules.Finding
 
-	// Quick check: does this look like server-side Node.js code?
-	// If it's a completely browser-side JS file, we skip it to reduce noise
-	// and let the generic JS/TS analyzer handle it.
-	// Note: file.Content may not be populated by all scanners, so we
-	// reconstruct from Lines which is always available.
+	/*
+		Skip browser-only files (the JS/TS analyzer covers them). Lines is used
+		instead of Content because not every scanner populates Content.
+	*/
 	contentStr := strings.Join(file.Lines, "\n")
 	if !a.nodeIndicator.MatchString(contentStr) {
 		return findings, nil
 	}
 
 	for i, line := range file.Lines {
-		// Check for context cancellation
 		select {
 		case <-ctx.Done():
 			return findings, ctx.Err()
@@ -70,7 +68,7 @@ func (a *NodeAnalyzer) Analyze(ctx context.Context, file analyzer.FileContext) (
 					Confidence:  pat.rule.Confidence,
 					FilePath:    file.Path,
 					Line:        i + 1,
-					Column:      0, // Line-based regex analysis
+					Column:      0,
 					Snippet:     strings.TrimSpace(line),
 					OWASP:       pat.rule.OWASP,
 					NIST:        pat.rule.NIST,
@@ -93,24 +91,21 @@ type packageJSON struct {
 	DevDependencies map[string]string `json:"devDependencies"`
 }
 
-// AnalyzeProject performs project-level analysis, specifically checking package.json
-// and package-lock.json for supply chain and configuration issues.
+// AnalyzeProject checks package.json and package-lock.json for supply chain issues.
 func (a *NodeAnalyzer) AnalyzeProject(ctx context.Context, projectRoot string) ([]rules.Finding, error) {
 	var findings []rules.Finding
 
 	packageJSONPath := filepath.Join(projectRoot, "package.json")
 	lockfilePath := filepath.Join(projectRoot, "package-lock.json")
 
-	// Check if package.json exists. If not, this is likely not a Node.js project.
 	data, err := os.ReadFile(packageJSONPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return findings, nil // Not a Node project
+			return findings, nil // Not a Node.js project
 		}
-		return findings, err // Other read error
+		return findings, err
 	}
 
-	// Check for missing lockfile
 	if _, err := os.Stat(lockfilePath); os.IsNotExist(err) {
 		findings = append(findings, rules.Finding{
 			RuleID:      "NODE-A03-001",
@@ -130,48 +125,44 @@ func (a *NodeAnalyzer) AnalyzeProject(ctx context.Context, projectRoot string) (
 
 	var pkg packageJSON
 	if err := json.Unmarshal(data, &pkg); err != nil {
-		// If we can't parse it, we just return what we have
-		return findings, nil
+		return findings, nil // Malformed package.json is not reported
 	}
 
-	// Helper to check dependencies
 	checkDeps := func(deps map[string]string) {
 		for name, version := range deps {
-			// Check for known vulnerable packages
 			if name == "node-serialize" {
 				findings = append(findings, rules.Finding{
-					RuleID:      "NODE-A03-002",
-					Title:       "Known Vulnerable Dependency (node-serialize)",
-					Description: "The project depends on node-serialize, which is known to be vulnerable to remote code execution (RCE) via unsafe deserialization.",
-					Severity:    rules.SeverityCritical,
-					Confidence:  rules.ConfidenceHigh,
-					FilePath:    packageJSONPath,
-					Line:        1,
+					RuleID:       "NODE-A03-002",
+					Title:        "Known Vulnerable Dependency (node-serialize)",
+					Description:  "The project depends on node-serialize, which is known to be vulnerable to remote code execution (RCE) via unsafe deserialization.",
+					Severity:     rules.SeverityCritical,
+					Confidence:   rules.ConfidenceHigh,
+					FilePath:     packageJSONPath,
+					Line:         1,
 					MatchContent: "node-serialize: " + version,
-					OWASP:       rules.OWASPA03,
-					NIST:        []rules.NISTFunction{rules.NISTProtect},
-					CWE:         "CWE-502",
-					Remediation: "Remove node-serialize and use secure serialization alternatives like JSON.parse/stringify.",
-					Language:    "Node.js",
+					OWASP:        rules.OWASPA03,
+					NIST:         []rules.NISTFunction{rules.NISTProtect},
+					CWE:          "CWE-502",
+					Remediation:  "Remove node-serialize and use secure serialization alternatives like JSON.parse/stringify.",
+					Language:     "Node.js",
 				})
 			}
 
-			// Check for wildcard or latest versions
 			if version == "*" || version == "latest" || version == ">0.0.0" {
 				findings = append(findings, rules.Finding{
-					RuleID:      "NODE-A03-003",
-					Title:       "Wildcard Dependency Version",
-					Description: "A dependency (" + name + ") is configured to use a wildcard ('*') or 'latest' version. This pulls the newest version automatically, which is a supply chain risk.",
-					Severity:    rules.SeverityHigh,
-					Confidence:  rules.ConfidenceHigh,
-					FilePath:    packageJSONPath,
-					Line:        1,
+					RuleID:       "NODE-A03-003",
+					Title:        "Wildcard Dependency Version",
+					Description:  "A dependency (" + name + ") is configured to use a wildcard ('*') or 'latest' version. This pulls the newest version automatically, which is a supply chain risk.",
+					Severity:     rules.SeverityHigh,
+					Confidence:   rules.ConfidenceHigh,
+					FilePath:     packageJSONPath,
+					Line:         1,
 					MatchContent: name + ": " + version,
-					OWASP:       rules.OWASPA03,
-					NIST:        []rules.NISTFunction{rules.NISTProtect},
-					CWE:         "CWE-1104",
-					Remediation: "Pin the dependency to a specific version or a narrow semver range.",
-					Language:    "Node.js",
+					OWASP:        rules.OWASPA03,
+					NIST:         []rules.NISTFunction{rules.NISTProtect},
+					CWE:          "CWE-1104",
+					Remediation:  "Pin the dependency to a specific version or a narrow semver range.",
+					Language:     "Node.js",
 				})
 			}
 		}
