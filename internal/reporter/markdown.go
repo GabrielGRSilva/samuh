@@ -3,8 +3,9 @@ package reporter
 import (
 	"bytes"
 	"fmt"
-	"samuh/internal/rules"
 	"strings"
+
+	"samuh/internal/rules"
 )
 
 // MarkdownReporter generates a comprehensive markdown report.
@@ -15,32 +16,12 @@ func (r *MarkdownReporter) Format() Format {
 	return FormatMarkdown
 }
 
-// severityEmoji maps severities to emojis.
-func severityEmoji(s rules.Severity) string {
-	switch s {
-	case rules.SeverityCritical:
-		return "🔴 CRITICAL"
-	case rules.SeverityHigh:
-		return "🟠 HIGH"
-	case rules.SeverityMedium:
-		return "🟡 MEDIUM"
-	case rules.SeverityLow:
-		return "🔵 LOW"
-	case rules.SeverityInfo:
-		return "⚪ INFO"
-	default:
-		return string(s)
-	}
-}
-
 // Generate produces the markdown report content as bytes.
 func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	var buf bytes.Buffer
 
-	// Title
 	buf.WriteString("# 🛡️ SAMUH Security Scan Report\n\n")
 
-	// Summary
 	buf.WriteString("## Summary\n")
 	buf.WriteString(fmt.Sprintf("- **Project:** %s\n", report.ProjectPath))
 	buf.WriteString(fmt.Sprintf("- **Scan Date:** %s\n", report.ScanTimestamp))
@@ -49,7 +30,6 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	buf.WriteString(fmt.Sprintf("- **Total Findings:** %d\n", report.TotalFindings))
 	buf.WriteString(fmt.Sprintf("- **Languages:** %s\n\n", strings.Join(report.Languages, ", ")))
 
-	// Findings by Severity
 	buf.WriteString("### Findings by Severity\n")
 	buf.WriteString("| Severity | Count |\n|----------|-------|\n")
 	severities := []rules.Severity{rules.SeverityCritical, rules.SeverityHigh, rules.SeverityMedium, rules.SeverityLow, rules.SeverityInfo}
@@ -60,7 +40,6 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	}
 	buf.WriteString("\n")
 
-	// OWASP Top 10 Coverage
 	buf.WriteString("### OWASP Top 10:2025 Coverage\n")
 	buf.WriteString("| Category | Findings |\n|----------|----------|\n")
 	for owasp, count := range report.Summary.ByOWASP {
@@ -70,10 +49,8 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	}
 	buf.WriteString("\n")
 
-	// Findings Section
 	buf.WriteString("## Findings\n\n")
 
-	// Group findings by severity
 	findingsBySeverity := make(map[rules.Severity][]rules.Finding)
 	for _, f := range report.Findings {
 		findingsBySeverity[f.Severity] = append(findingsBySeverity[f.Severity], f)
@@ -109,7 +86,6 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 
 				if f.Snippet != "" {
 					buf.WriteString("**Code:**\n")
-					// Try to use the language for syntax highlighting if known
 					lang := strings.ToLower(f.Language)
 					if lang == "" {
 						lang = "text"
@@ -141,4 +117,22 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 // FileExtension returns the file extension for markdown reports.
 func (r *MarkdownReporter) FileExtension() string {
 	return ".md"
+}
+
+// severityEmoji maps severities to emoji-prefixed labels.
+func severityEmoji(s rules.Severity) string {
+	switch s {
+	case rules.SeverityCritical:
+		return "🔴 CRITICAL"
+	case rules.SeverityHigh:
+		return "🟠 HIGH"
+	case rules.SeverityMedium:
+		return "🟡 MEDIUM"
+	case rules.SeverityLow:
+		return "🔵 LOW"
+	case rules.SeverityInfo:
+		return "⚪ INFO"
+	default:
+		return string(s)
+	}
 }

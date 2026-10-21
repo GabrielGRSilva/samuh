@@ -3,12 +3,13 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"samuh/internal/reporter"
 	"samuh/internal/rules"
-	"strings"
 )
 
-// Converts a scope string to the ScanScope type.
+// parseScope converts s to a ScanScope, returning an error for unknown scopes.
 func parseScope(s string) (rules.ScanScope, error) {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "project":
@@ -20,7 +21,7 @@ func parseScope(s string) (rules.ScanScope, error) {
 	}
 }
 
-// ParseFormat converts a string to a Format, returning an error for unknown formats.
+// parseFormat converts s to a Format, defaulting to Markdown.
 func parseFormat(s string) reporter.Format {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "json":
@@ -36,7 +37,7 @@ func parseFormat(s string) reporter.Format {
 	}
 }
 
-// Converts a severity string to the Severity type.
+// parseSeverity converts s to a Severity, defaulting to Low.
 func parseSeverity(s string) rules.Severity {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "critical":

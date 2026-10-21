@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// ResolveSafePath resolves targetPath and ensures it's within basePath
+// ResolveSafePath resolves targetPath and ensures it's within basePath.
 func ResolveSafePath(basePath, targetPath string) (string, error) {
 	absBase, err := filepath.Abs(basePath)
 	if err != nil {
@@ -15,7 +15,7 @@ func ResolveSafePath(basePath, targetPath string) (string, error) {
 
 	evalBase, err := filepath.EvalSymlinks(absBase)
 	if err != nil {
-		evalBase = absBase // fallback
+		evalBase = absBase
 	}
 
 	absTarget := targetPath
@@ -25,10 +25,9 @@ func ResolveSafePath(basePath, targetPath string) (string, error) {
 
 	evalTarget, err := filepath.EvalSymlinks(absTarget)
 	if err != nil {
-		evalTarget = absTarget // fallback
+		evalTarget = absTarget
 	}
 
-	// Clean paths
 	cleanBase := filepath.Clean(evalBase)
 	cleanTarget := filepath.Clean(evalTarget)
 
@@ -39,7 +38,7 @@ func ResolveSafePath(basePath, targetPath string) (string, error) {
 	return cleanTarget, nil
 }
 
-// IsWithinDirectory checks if a path is safely within a base directory
+// IsWithinDirectory reports whether targetPath resolves within basePath.
 func IsWithinDirectory(basePath, targetPath string) bool {
 	_, err := ResolveSafePath(basePath, targetPath)
 	return err == nil

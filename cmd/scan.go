@@ -45,7 +45,6 @@ func init() {
 }
 
 func runScan(cmd *cobra.Command, args []string) {
-	// Determine target path
 	path := "."
 	if len(args) > 0 {
 		path = args[0]
@@ -59,17 +58,14 @@ func runScan(cmd *cobra.Command, args []string) {
 	excludes, _ := cmd.Flags().GetStringSlice("exclude")
 	maxSize, _ := cmd.Flags().GetInt64("max-file-size")
 
-	// Parse commands in order to sanitize them
 	scanScope, err := parseScope(scope)
-	format := parseFormat(formatStr)
-	minSev := parseSeverity(sevStr)
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+	format := parseFormat(formatStr)
+	minSev := parseSeverity(sevStr)
 
-	// Cap max file size at 10MB
 	const maxFileSizeCap = 10 * 1024 * 1024
 	if maxSize > maxFileSizeCap {
 		maxSize = maxFileSizeCap
@@ -78,7 +74,6 @@ func runScan(cmd *cobra.Command, args []string) {
 		maxSize = 1048576
 	}
 
-	// Validate path exists
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: path %q does not exist: %v\n", path, err)
@@ -89,10 +84,8 @@ func runScan(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// Create the analyzer registry with all built-in analyzers
 	registry := analyzer.DefaultRegistry()
 
-	// Configure and run the engine
 	opts := engine.Options{
 		Scope:       scanScope,
 		Path:        path,
@@ -118,7 +111,6 @@ func runScan(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// Generate the report
 	rep, err := reporter.New(format)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating reporter: %v\n", err)
@@ -131,9 +123,7 @@ func runScan(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// Write to file or stdout
 	if out != "" {
-		// Clean the output path to prevent any path traversal
 		out = filepath.Clean(out)
 		if err := os.WriteFile(out, reportBytes, 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing output file: %v\n", err)
@@ -146,7 +136,6 @@ func runScan(cmd *cobra.Command, args []string) {
 		os.Stdout.Write(reportBytes)
 	}
 
-	// Print summary to stderr
 	if !quiet {
 		fmt.Fprintf(os.Stderr, "\n✅ Scan completed in %s\n", report.ScanDuration)
 		fmt.Fprintf(os.Stderr, "📊 Found %d finding(s) across %d file(s)\n",
@@ -160,7 +149,7 @@ func runScan(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Exit with code 1 if critical or high findings found
+	// A non-zero exit on critical/high findings lets CI pipelines fail the build.
 	if report.Summary.BySeverity[rules.SeverityCritical] > 0 ||
 		report.Summary.BySeverity[rules.SeverityHigh] > 0 {
 		os.Exit(1)

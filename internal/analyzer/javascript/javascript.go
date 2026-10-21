@@ -35,7 +35,6 @@ func (a *JavaScriptAnalyzer) Analyze(ctx context.Context, file analyzer.FileCont
 	var findings []rules.Finding
 
 	for i, line := range file.Lines {
-		// Check for context cancellation
 		select {
 		case <-ctx.Done():
 			return findings, ctx.Err()
@@ -56,7 +55,7 @@ func (a *JavaScriptAnalyzer) Analyze(ctx context.Context, file analyzer.FileCont
 					Severity:     p.rule.Severity,
 					Confidence:   p.rule.Confidence,
 					FilePath:     file.Path,
-					Line:         i + 1, // 1-based line numbers
+					Line:         i + 1,
 					Snippet:      lineStr,
 					MatchContent: p.regex.FindString(lineStr),
 					OWASP:        p.rule.OWASP,
@@ -74,8 +73,7 @@ func (a *JavaScriptAnalyzer) Analyze(ctx context.Context, file analyzer.FileCont
 	return findings, nil
 }
 
-// AnalyzeProject performs project-level analysis. For JS/TS, package-level
-// dependency checks are handled by the Node.js analyzer.
+// AnalyzeProject is a no-op; dependency checks are handled by the Node.js analyzer.
 func (a *JavaScriptAnalyzer) AnalyzeProject(ctx context.Context, projectRoot string) ([]rules.Finding, error) {
 	return nil, nil
 }

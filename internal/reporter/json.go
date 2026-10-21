@@ -2,6 +2,7 @@ package reporter
 
 import (
 	"encoding/json"
+
 	"samuh/internal/rules"
 )
 

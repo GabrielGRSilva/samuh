@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// ReadFileBytes reads up to maxBytes from a file
+// ReadFileBytes reads up to maxBytes from a file.
 func ReadFileBytes(path string, maxBytes int64) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -24,7 +24,7 @@ func ReadFileBytes(path string, maxBytes int64) ([]byte, error) {
 	return buf[:n], nil
 }
 
-// ReadFileLines reads file lines with a size limit
+// ReadFileLines reads file lines with a size limit.
 func ReadFileLines(path string, maxSize int64) ([]string, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -43,7 +43,7 @@ func ReadFileLines(path string, maxSize int64) ([]string, error) {
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
-	// Set max token size to 1MB per line just in case
+	// Allow lines up to 1MB (bufio's default limit is 64KB).
 	const maxCapacity = 1024 * 1024
 	buf := make([]byte, maxCapacity)
 	scanner.Buffer(buf, maxCapacity)
@@ -59,7 +59,7 @@ func ReadFileLines(path string, maxSize int64) ([]string, error) {
 	return lines, nil
 }
 
-// IsBinaryFile checks the first few bytes for null characters
+// IsBinaryFile reports whether content contains a null byte.
 func IsBinaryFile(content []byte) bool {
 	for _, b := range content {
 		if b == 0 {
@@ -69,7 +69,7 @@ func IsBinaryFile(content []byte) bool {
 	return false
 }
 
-// GetSnippet extracts a code snippet with surrounding context lines (1-indexed line number)
+// GetSnippet extracts a code snippet around the 1-based line with context lines on each side.
 func GetSnippet(lines []string, line int, context int) string {
 	if line < 1 || line > len(lines) {
 		return ""

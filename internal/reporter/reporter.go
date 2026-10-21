@@ -1,9 +1,12 @@
-// Package reporter defines the interface for report generation and provides
-// factory methods for the supported output formats.
+/*
+Package reporter defines the interface for report generation and provides
+factory methods for the supported output formats.
+*/
 package reporter
 
 import (
 	"fmt"
+
 	"samuh/internal/rules"
 )
 
@@ -25,8 +28,7 @@ type Reporter interface {
 	// Generate produces the report content as bytes.
 	Generate(report *rules.ScanReport) ([]byte, error)
 
-	// FileExtension returns the appropriate file extension for the output
-	// (e.g., ".json", ".html", ".md").
+	// FileExtension returns the output file extension (e.g., ".json", ".html", ".md").
 	FileExtension() string
 }
 

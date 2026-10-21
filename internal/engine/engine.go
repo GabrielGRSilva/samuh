@@ -1,5 +1,7 @@
-// Package engine provides the core scan orchestrator that coordinates file
-// discovery, language analysis, and result aggregation for SAMUH.
+/*
+Package engine provides the core scan orchestrator that coordinates file
+discovery, language analysis, and result aggregation for SAMUH.
+*/
 package engine
 
 import (
@@ -20,17 +22,16 @@ import (
 
 // Options configures a scan operation.
 type Options struct {
-	Scope       rules.ScanScope // Scope is the scan scope (the entire project, a specific folder inside it, etc.)
-	Path        string          // Path is the root directory to scan.
-	Exclude     []string        // Exclude is a list of glob patterns to exclude from scanning.
-	Languages   []string        // Languages filters scanning to specific language analyzers. If empty, all registered analyzers are used.
-	MinSeverity rules.Severity  // MinSeverity is the minimum severity level for reported findings.
-	MaxFileSize int64           // MaxFileSize is the maximum file size in bytes to scan.
-	Verbose     bool            // Verbose enables detailed progress output during scanning.
+	Scope       rules.ScanScope
+	Path        string
+	Exclude     []string // glob patterns
+	Languages   []string // analyzer names; empty means all
+	MinSeverity rules.Severity
+	MaxFileSize int64 // bytes
+	Verbose     bool
 }
 
-// Engine orchestrates the scanning process by coordinating file discovery,
-// running language analyzers concurrently, and aggregating findings.
+// Engine runs language analyzers concurrently over discovered files and aggregates findings.
 type Engine struct {
 	registry *analyzer.Registry
 	opts     Options
@@ -44,12 +45,10 @@ func New(registry *analyzer.Registry, opts Options) *Engine {
 	}
 }
 
-// Run executes the scan and returns a complete ScanReport.
-// It respects context cancellation for timeout support.
+// Run executes the scan, honoring ctx cancellation, and returns the report.
 func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 	start := time.Now()
 
-	// Discover files
 	scn := scanner.New(e.opts.Path, e.opts.Exclude, e.opts.MaxFileSize)
 	files, err := scn.DiscoverFiles(ctx)
 	if err != nil {
@@ -60,9 +59,7 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		fmt.Fprintf(os.Stderr, "[verbose] Discovered %d file(s) to scan\n", len(files))
 	}
 
-	// Get analyzers, optionally filtering by language
 	analyzers := e.getAnalyzers()
-
 	if len(analyzers) == 0 {
 		return nil, fmt.Errorf("no analyzers available for the specified languages")
 	}
@@ -76,7 +73,6 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		fmt.Fprintf(os.Stderr, "[verbose] Worker pool size: %d\n", runtime.NumCPU())
 	}
 
-	// Run file-level analysis concurrently
 	var allFindings []rules.Finding
 	var mu sync.Mutex
 
@@ -124,7 +120,6 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		return nil, ctx.Err()
 	}
 
-	// Run project-level analysis ONLY if the scope is project
 	if e.opts.Scope == rules.ScanScopeProject {
 		if e.opts.Verbose {
 			fmt.Fprintf(os.Stderr, "[verbose] Running project-level analysis...\n")
@@ -145,7 +140,6 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		fmt.Fprintf(os.Stderr, "[verbose] Minimum severity filter: %s\n", e.opts.MinSeverity)
 	}
 
-	// Filter by minimum severity
 	var filteredFindings []rules.Finding
 	for _, f := range allFindings {
 		if f.Severity.IsAtLeast(e.opts.MinSeverity) {
@@ -157,12 +151,10 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		fmt.Fprintf(os.Stderr, "[verbose] Findings after severity filter: %d\n", len(filteredFindings))
 	}
 
-	// Sort by severity (critical first)
 	sort.Slice(filteredFindings, func(i, j int) bool {
 		return filteredFindings[i].Severity.Rank() > filteredFindings[j].Severity.Rank()
 	})
 
-	// Build summary
 	summary := rules.NewReportSummary()
 	languageSet := make(map[string]bool)
 	for _, f := range filteredFindings {
