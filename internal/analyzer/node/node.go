@@ -24,8 +24,7 @@ type NodeAnalyzer struct {
 // NewAnalyzer creates a new instance of NodeAnalyzer.
 func NewAnalyzer() *NodeAnalyzer {
 	return &NodeAnalyzer{
-		nodeIndicator: regexp.MustCompile(`(?i)(require\(|module\.exports|process\.|Buffer\.|__dirname|__filename|express\
-		(|import\s+.*['"](node:|fs|path|http|crypto|child_process|os)['"])`),
+		nodeIndicator: regexp.MustCompile(`(?i)(require\(|module\.exports|process\.|Buffer\.|__dirname|__filename|express\(|import\s+.*['"](node:|fs|path|http|crypto|child_process|os)['"])`),
 	}
 }
 
