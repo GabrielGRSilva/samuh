@@ -163,6 +163,7 @@ sequenceDiagram
 #### Step 1: CLI Parsing (`cmd/scan.go`)
 
 The `scan` command uses [Cobra](https://github.com/spf13/cobra) to parse command-line flags. It validates:
+
 - The target path exists and is a directory
 - The output format is one of: json, html, markdown, sarif
 - The max file size doesn't exceed 10 MB
@@ -190,12 +191,14 @@ The engine creates a worker pool with one goroutine per CPU core. All discovered
 
 After file scanning is complete, the engine checks the `--scope` flag. If the scope is set to `project` (the default), each analyzer gets one call to `AnalyzeProject()`. If the scope is set to `folder`, this step is entirely skipped.
 This is where analyzers check project-wide configuration files:
+
 - **PHP:** Checks for missing `composer.lock`, insecure `minimum-stability` in `composer.json`
 - **Node.js:** Checks for missing `package-lock.json`, wildcard `"*"` dependency versions, known-vulnerable packages
 
 #### Step 5: Filter & Sort
 
 All findings from all analyzers are combined, then:
+
 1. Filtered by the `--severity` flag (e.g., if you set `--severity high`, MEDIUM/LOW/INFO are removed)
 2. Sorted by severity (CRITICAL first, INFO last)
 
@@ -216,6 +219,7 @@ type Severity string  // "CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"
 ```
 
 Severity has two helper methods:
+
 - `Rank() int` — returns a number (5 for CRITICAL, 1 for INFO) used for sorting
 - `IsAtLeast(other) bool` — used for filtering (`"HIGH".IsAtLeast("MEDIUM")` → true)
 
@@ -324,7 +328,7 @@ The Node.js and JavaScript/TypeScript analyzers both handle `.js` files. To avoi
 
 ```go
 nodeIndicator := regexp.MustCompile(
-    `(?i)(require\(|module\.exports|process\.|Buffer\.|__dirname|__filename|express\()`)
+    `(?i)(require\(|module\.exports|process\.|Buffer\.|__dirname|__filename|express\(|import\s+.*['"](node:|fs|path|http|crypto|child_process|os)['"])`),
 
 // In Analyze():
 contentStr := strings.Join(file.Lines, "\n")
@@ -369,6 +373,7 @@ And a concrete example from the PHP analyzer:
 ```
 
 This regex matches lines like:
+
 - `mysql_query("SELECT * FROM users WHERE id = " . $_GET['id'])`
 - `mysqli_query($conn, "DELETE FROM " . $_POST['table'])`
 
@@ -390,6 +395,7 @@ This is O(lines × patterns) per file, but because Go's regex engine (RE2) guara
 ### Why Pre-Compiled Regexes?
 
 All regexes are compiled at startup using `regexp.MustCompile()` (a package-level variable). This means:
+
 - **Performance:** Regex compilation happens once, not on every file scan
 - **Fail-fast:** If a regex is invalid, the program panics immediately at startup, not silently during a scan
 - **ReDoS-safe:** Go's RE2 engine is immune to Regular Expression Denial-of-Service attacks
@@ -448,7 +454,7 @@ func New(format Format) (Reporter, error) {
 
 ### Why `html/template` Matters for Security
 
-Go has two template packages: `text/template` (no escaping) and `html/template` (auto-escaping). SAMUH uses `html/template`, which means if the scanned code contains something like `<script>alert('xss')</script>`, it gets automatically escaped to `&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;` in the HTML report. This prevents the scanned code from executing in the report viewer's browser.
+Go has two template packages: `text/template` (no escaping) and `html/template` (auto-escaping). SAMUH uses `html/template`, which means if the scanned code contains something like `<script>alert('xss')</script>`, it gets automatically escaped to `<script>alert('xss')</script>` in the HTML report. This prevents the scanned code from executing in the report viewer's browser.
 
 ---
 
@@ -534,7 +540,7 @@ SAMUH is designed to safely process **untrusted source code**. Here's what that 
 
 **Scenario:** SAMUH shells out to an external tool, and a malicious filename causes command injection.
 
-**Mitigation:** SAMUH makes **zero `os/exec` calls**. It never shells out to any external process. All analysis is done purely with Go's standard library.
+**Mitigation:** SAMUH makes **zero** `os/exec` **calls**. It never shells out to any external process. All analysis is done purely with Go's standard library.
 
 ### Threat: Dependency Supply Chain
 
@@ -701,7 +707,7 @@ The analyzer's `Analyze()` loop automatically picks up any new patterns in the s
 
 ### Writing Good Regex Patterns — Tips
 
-1. **Use `(?i)` for case-insensitive matching** when function names might vary in case
+1. **Use** `(?i)` **for case-insensitive matching** when function names might vary in case
 2. **Remember: Go uses RE2** — no `(?!...)` lookaheads, no `(?<=...)` lookbehinds
 3. **Anchor where possible** — `\b` (word boundary) reduces false positives
 4. **Test your regex** at [regex101.com](https://regex101.com/) with the "Golang" flavor
@@ -767,6 +773,7 @@ func New(format Format) (Reporter, error) {
 ### Unit Tests
 
 Test each component in isolation:
+
 - `util/safepath_test.go` — Path traversal with `../`, symlinks, absolute paths
 - `util/fileutil_test.go` — Binary detection, line reading, snippet extraction at boundaries
 - `rules/rule_test.go` — Severity ranking, `IsAtLeast()` comparisons
@@ -774,6 +781,7 @@ Test each component in isolation:
 ### Integration Tests
 
 Run the full pipeline against `testdata/`:
+
 - Verify known vulnerabilities are detected (true positives)
 - Verify clean code produces no findings (no false positives)
 - Verify all report formats produce valid output
