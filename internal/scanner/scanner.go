@@ -74,18 +74,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		}
 
 		// Resolve symlinks so a malicious project cannot make us read files outside its root.
-		realPath, evalErr := filepath.EvalSymlinks(path)
-		if evalErr != nil {
-			return nil
-		}
-
-		realBase, _ := filepath.EvalSymlinks(absBasePath)
-		if realBase == "" {
-			realBase = absBasePath
-		}
-
-		if !strings.HasPrefix(filepath.Clean(realPath), filepath.Clean(realBase)+string(filepath.Separator)) &&
-			filepath.Clean(realPath) != filepath.Clean(realBase) {
+		if !util.IsWithinDirectory(absBasePath, path) {
 			return nil
 		}
 
