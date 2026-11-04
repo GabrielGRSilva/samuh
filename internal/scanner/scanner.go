@@ -78,10 +78,12 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		if evalErr != nil {
 			return nil
 		}
+
 		realBase, _ := filepath.EvalSymlinks(absBasePath)
 		if realBase == "" {
 			realBase = absBasePath
 		}
+
 		if !strings.HasPrefix(filepath.Clean(realPath), filepath.Clean(realBase)+string(filepath.Separator)) &&
 			filepath.Clean(realPath) != filepath.Clean(realBase) {
 			return nil
@@ -96,6 +98,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		if checkLen > 512 {
 			checkLen = 512
 		}
+
 		if util.IsBinaryFile(fullContent[:checkLen]) {
 			return nil
 		}
@@ -107,6 +110,11 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 
 		ext := strings.ToLower(filepath.Ext(path))
 		language := detectLanguage(ext)
+
+		//If the language isn't recognized or if the file is empty, ignore it
+		if language == "" || info.Size() == 0 {
+			return nil
+		}
 
 		files = append(files, &analyzer.FileContext{
 			Path:         path,
