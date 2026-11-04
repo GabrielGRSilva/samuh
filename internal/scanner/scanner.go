@@ -59,15 +59,19 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			return nil
 		}
 
+		ext := strings.ToLower(filepath.Ext(path))
+		language := detectLanguage(ext)
+
+		//If the language isn't recognized or if the file is empty, ignore it
+		if language == "" {
+			return nil
+		}
+
 		fileInfo, errInfo := info.Info()
 		if errInfo != nil {
 			return nil
 		}
 		if fileInfo.Size() > s.maxFileSize || fileInfo.Size() == 0 {
-			return nil
-		}
-
-		if fileInfo.Size() > s.maxFileSize {
 			return nil
 		}
 
@@ -102,14 +106,6 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 
 		lines, err := util.ReadFileLines(path, s.maxFileSize)
 		if err != nil {
-			return nil
-		}
-
-		ext := strings.ToLower(filepath.Ext(path))
-		language := detectLanguage(ext)
-
-		//If the language isn't recognized or if the file is empty, ignore it
-		if language == "" || fileInfo.Size() == 0 {
 			return nil
 		}
 
