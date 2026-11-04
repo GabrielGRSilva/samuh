@@ -36,7 +36,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		return nil, fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	err = filepath.Walk(absBasePath, func(path string, info os.FileInfo, err error) error {
+	err = filepath.WalkDir(absBasePath, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return nil // Skip paths with errors
 		}
@@ -59,7 +59,15 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			return nil
 		}
 
-		if info.Size() > s.maxFileSize {
+		fileInfo, errInfo := info.Info()
+		if errInfo != nil {
+			return nil
+		}
+		if fileInfo.Size() > s.maxFileSize || fileInfo.Size() == 0 {
+			return nil
+		}
+
+		if fileInfo.Size() > s.maxFileSize {
 			return nil
 		}
 
@@ -74,16 +82,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		}
 
 		// Resolve symlinks so a malicious project cannot make us read files outside its root.
-		realPath, evalErr := filepath.EvalSymlinks(path)
-		if evalErr != nil {
-			return nil
-		}
-		realBase, _ := filepath.EvalSymlinks(absBasePath)
-		if realBase == "" {
-			realBase = absBasePath
-		}
-		if !strings.HasPrefix(filepath.Clean(realPath), filepath.Clean(realBase)+string(filepath.Separator)) &&
-			filepath.Clean(realPath) != filepath.Clean(realBase) {
+		if !util.IsWithinDirectory(absBasePath, path) {
 			return nil
 		}
 
@@ -96,6 +95,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		if checkLen > 512 {
 			checkLen = 512
 		}
+
 		if util.IsBinaryFile(fullContent[:checkLen]) {
 			return nil
 		}
@@ -108,13 +108,18 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		ext := strings.ToLower(filepath.Ext(path))
 		language := detectLanguage(ext)
 
+		//If the language isn't recognized or if the file is empty, ignore it
+		if language == "" || fileInfo.Size() == 0 {
+			return nil
+		}
+
 		files = append(files, &analyzer.FileContext{
 			Path:         path,
 			RelativePath: relPath,
 			Content:      fullContent,
 			Lines:        lines,
 			Language:     language,
-			Size:         info.Size(),
+			Size:         fileInfo.Size(),
 		})
 
 		return nil

@@ -172,7 +172,7 @@ It then creates an `engine.Options` struct with all the configuration and passes
 
 #### Step 2: File Discovery (`internal/scanner/scanner.go`)
 
-The scanner uses Go's `filepath.Walk()` to recursively traverse the directory tree. For each entry it encounters:
+The scanner uses Go's `filepath.Walkdir()` to recursively traverse the directory tree. For each entry it encounters:
 
 1. **Directories:** Skip if hidden (starts with `.`), or named `node_modules`/`vendor`/`bower_components`
 2. **Files:** Skip if larger than `--max-file-size`, or matches an `--exclude` pattern
