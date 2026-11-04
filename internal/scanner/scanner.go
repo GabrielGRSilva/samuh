@@ -36,7 +36,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		return nil, fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	err = filepath.Walk(absBasePath, func(path string, info os.FileInfo, err error) error {
+	err = filepath.WalkDir(absBasePath, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return nil // Skip paths with errors
 		}
@@ -59,7 +59,15 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			return nil
 		}
 
-		if info.Size() > s.maxFileSize {
+		fileInfo, errInfo := info.Info()
+		if errInfo != nil {
+			return nil
+		}
+		if fileInfo.Size() > s.maxFileSize || fileInfo.Size() == 0 {
+			return nil
+		}
+
+		if fileInfo.Size() > s.maxFileSize {
 			return nil
 		}
 
@@ -101,7 +109,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 		language := detectLanguage(ext)
 
 		//If the language isn't recognized or if the file is empty, ignore it
-		if language == "" || info.Size() == 0 {
+		if language == "" || fileInfo.Size() == 0 {
 			return nil
 		}
 
@@ -111,7 +119,7 @@ func (s *Scanner) DiscoverFiles(ctx context.Context) ([]*analyzer.FileContext, e
 			Content:      fullContent,
 			Lines:        lines,
 			Language:     language,
-			Size:         info.Size(),
+			Size:         fileInfo.Size(),
 		})
 
 		return nil
