@@ -274,7 +274,7 @@ var jsPatterns = []pattern{
 		},
 	},
 	{
-		regex: regexp.MustCompile("(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)[\\s\\w*]+(FROM|INTO|SET|TABLE)\\s+[\\w\\.]+\\s+.*\\$\\{[^}]+\\}"),
+		regex: regexp.MustCompile("(?i)(?:^|[=(,:+]|\\breturn)\\s*`[^`]*?\\b(SELECT|INSERT|UPDATE|DELETE|DROP)\\b[\\s\\w*,]+\\b(FROM|INTO|SET|TABLE)\\b\\s+[\\w.]+[^`]*?\\$\\{[^}]+\\}"),
 		rule: rules.Rule{
 			ID:          "JS-INJ-007",
 			Title:       "SQL Injection in Template Literal",
