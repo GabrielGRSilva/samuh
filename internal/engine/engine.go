@@ -131,10 +131,20 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		if e.opts.Verbose {
 			fmt.Fprintf(os.Stderr, "[verbose] Running project-level analysis...\n")
 		}
+
 		for _, a := range analyzers {
 			findings, err := a.AnalyzeProject(ctx, e.opts.Path)
-			if err == nil && len(findings) > 0 {
+
+			if err != nil {
+				mu.Lock()
+				opErrors = append(opErrors, err)
+				mu.Unlock()
+
+			} else if len(findings) > 0 {
+				mu.Lock()
 				allFindings = append(allFindings, findings...)
+				mu.Unlock()
+
 				if e.opts.Verbose {
 					fmt.Fprintf(os.Stderr, "[verbose] %s project analysis: %d finding(s)\n", a.Name(), len(findings))
 				}
