@@ -47,6 +47,7 @@ func New(registry *analyzer.Registry, opts Options) *Engine {
 
 // Run executes the scan, honoring ctx cancellation, and returns the report.
 func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
+	opErrors := []error{}
 	start := time.Now()
 
 	scn := scanner.New(e.opts.Path, e.opts.Exclude, e.opts.MaxFileSize)
@@ -101,9 +102,15 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 
 				ext := strings.ToLower(filepath.Ext(fc.Path))
 				for _, a := range analyzers {
+
 					if supportsExt(a, ext) {
 						findings, err := a.Analyze(ctx, *fc)
-						if err == nil && len(findings) > 0 {
+
+						if err != nil {
+							mu.Lock()
+							opErrors = append(opErrors, err)
+							mu.Unlock()
+						} else if len(findings) > 0 {
 							mu.Lock()
 							allFindings = append(allFindings, findings...)
 							mu.Unlock()
@@ -189,6 +196,7 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		Summary:        summary,
 		Languages:      languages,
 		ScannerVersion: "0.1.0",
+		Errors:         opErrors,
 	}
 
 	return report, nil

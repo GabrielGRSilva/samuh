@@ -4,7 +4,9 @@ compliance framework mappings used throughout SAMUH.
 */
 package rules
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Severity represents the impact level of a security finding.
 type Severity string
@@ -138,6 +140,7 @@ type ScanReport struct {
 	Summary        ReportSummary
 	Languages      []string
 	ScannerVersion string
+	Errors         []error
 }
 
 // ReportSummary holds finding counts grouped by category.
