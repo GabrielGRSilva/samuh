@@ -91,6 +91,21 @@ func (r *SARIFReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 
 	doc.Runs[0].Tool.Driver.Rules = rulesList
 
+	errorMsgs := errorMessages(report.Errors)
+	notifications := make([]sarifNotification, 0, len(errorMsgs))
+	for _, msg := range errorMsgs {
+		notifications = append(notifications, sarifNotification{
+			Level:   "error",
+			Message: sarifMessage{Text: msg},
+		})
+	}
+
+	doc.Runs[0].Invocations = []sarifInvocation{{
+		ExecutionSuccessful:        len(notifications) == 0,
+		ToolExecutionNotifications: notifications,
+		Properties:                 sarifInvocationProperties{ErrorCount: len(notifications)},
+	}}
+
 	return json.MarshalIndent(doc, "", "  ")
 }
 
@@ -122,8 +137,25 @@ type sarifDocument struct {
 }
 
 type sarifRun struct {
-	Tool    sarifTool     `json:"tool"`
-	Results []sarifResult `json:"results"`
+	Tool        sarifTool         `json:"tool"`
+	Invocations []sarifInvocation `json:"invocations,omitempty"`
+	Results     []sarifResult     `json:"results"`
+}
+
+// sarifInvocation records whether the scan finished cleanly and any operational errors.
+type sarifInvocation struct {
+	ExecutionSuccessful        bool                      `json:"executionSuccessful"`
+	ToolExecutionNotifications []sarifNotification       `json:"toolExecutionNotifications,omitempty"`
+	Properties                 sarifInvocationProperties `json:"properties"`
+}
+
+type sarifInvocationProperties struct {
+	ErrorCount int `json:"errorCount"`
+}
+
+type sarifNotification struct {
+	Message sarifMessage `json:"message"`
+	Level   string       `json:"level"`
 }
 
 type sarifTool struct {
