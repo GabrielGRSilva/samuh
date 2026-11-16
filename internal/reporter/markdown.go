@@ -19,6 +19,7 @@ func (r *MarkdownReporter) Format() Format {
 // Generate produces the markdown report content as bytes.
 func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	var buf bytes.Buffer
+	errorMsgs := errorMessages(report.Errors)
 
 	buf.WriteString("# 🛡️ SAMUH Security Scan Report\n\n")
 
@@ -28,7 +29,8 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 	buf.WriteString(fmt.Sprintf("- **Duration:** %s\n", report.ScanDuration))
 	buf.WriteString(fmt.Sprintf("- **Files Scanned:** %d\n", report.TotalFiles))
 	buf.WriteString(fmt.Sprintf("- **Total Findings:** %d\n", report.TotalFindings))
-	buf.WriteString(fmt.Sprintf("- **Languages:** %s\n\n", strings.Join(report.Languages, ", ")))
+	buf.WriteString(fmt.Sprintf("- **Languages:** %s\n", strings.Join(report.Languages, ", ")))
+	buf.WriteString(fmt.Sprintf("- **Errors:** %d\n\n", len(errorMsgs)))
 
 	buf.WriteString("### Findings by Severity\n")
 	buf.WriteString("| Severity | Count |\n|----------|-------|\n")
@@ -111,7 +113,27 @@ func (r *MarkdownReporter) Generate(report *rules.ScanReport) ([]byte, error) {
 		}
 	}
 
+	if len(errorMsgs) > 0 {
+		buf.WriteString("## Operational Errors / Skipped Files\n\n")
+		buf.WriteString("The following files or components encountered operational errors during the scan:\n\n")
+		for _, msg := range errorMsgs {
+			buf.WriteString(fmt.Sprintf("- `%s`\n", msg))
+		}
+		buf.WriteString("\n")
+	}
+
 	return buf.Bytes(), nil
+}
+
+// errorMessages returns the text of each non-nil operational error.
+func errorMessages(errs []error) []string {
+	msgs := make([]string, 0, len(errs))
+	for _, err := range errs {
+		if err != nil {
+			msgs = append(msgs, err.Error())
+		}
+	}
+	return msgs
 }
 
 // FileExtension returns the file extension for markdown reports.
