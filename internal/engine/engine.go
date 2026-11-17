@@ -104,11 +104,11 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 				for _, a := range analyzers {
 
 					if supportsExt(a, ext) {
-						findings, err := a.Analyze(ctx, *fc)
+						findings, err := safeAnalyze(ctx, a, *fc)
 
 						if err != nil {
 							mu.Lock()
-							opErrors = append(opErrors, err)
+							opErrors = append(opErrors, fmt.Errorf("%s: analyzer %s: %w", fc.RelativePath, a.Name(), err))
 							mu.Unlock()
 						} else if len(findings) > 0 {
 							mu.Lock()
@@ -133,11 +133,11 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		}
 
 		for _, a := range analyzers {
-			findings, err := a.AnalyzeProject(ctx, e.opts.Path)
+			findings, err := safeAnalyzeProject(ctx, a, e.opts.Path)
 
 			if err != nil {
 				mu.Lock()
-				opErrors = append(opErrors, err)
+				opErrors = append(opErrors, fmt.Errorf("project analysis: analyzer %s: %w", a.Name(), err))
 				mu.Unlock()
 
 			} else if len(findings) > 0 {
@@ -151,6 +151,9 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 			}
 		}
 	}
+
+	// Workers append errors concurrently; sort for deterministic reports.
+	sort.Slice(opErrors, func(i, j int) bool { return opErrors[i].Error() < opErrors[j].Error() })
 
 	if e.opts.Verbose {
 		fmt.Fprintf(os.Stderr, "[verbose] Total raw findings before filtering: %d\n", len(allFindings))
@@ -241,4 +244,24 @@ func supportsExt(a analyzer.Analyzer, ext string) bool {
 		}
 	}
 	return false
+}
+
+// safeAnalyze runs a.Analyze, converting a panic into an error so one bad file cannot abort the scan.
+func safeAnalyze(ctx context.Context, a analyzer.Analyzer, fc analyzer.FileContext) (findings []rules.Finding, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			findings, err = nil, fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return a.Analyze(ctx, fc)
+}
+
+// safeAnalyzeProject runs a.AnalyzeProject, converting a panic into an error.
+func safeAnalyzeProject(ctx context.Context, a analyzer.Analyzer, root string) (findings []rules.Finding, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			findings, err = nil, fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return a.AnalyzeProject(ctx, root)
 }
