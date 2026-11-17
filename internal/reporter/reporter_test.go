@@ -113,3 +113,64 @@ func TestSARIFReporterErrors(t *testing.T) {
 		t.Error("clean scan should be executionSuccessful")
 	}
 }
+
+func TestJSONReporterKeepsReportFields(t *testing.T) {
+	rep := reportWithErrors(errors.New("e"))
+	rep.TotalFiles = 7
+	rep.ProjectPath = "my-proj"
+	out, err := (&JSONReporter{}).Generate(rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["ProjectPath"] != "my-proj" || got["TotalFiles"] != float64(7) {
+		t.Fatalf("embedded report fields lost: %v", got)
+	}
+}
+
+func TestErrorMessagesSkipsNil(t *testing.T) {
+	got := errorMessages([]error{nil, errors.New("a"), nil, errors.New("b")})
+	if len(got) != 2 || got[0] != "a" || got[1] != "b" {
+		t.Fatalf("unexpected: %v", got)
+	}
+	if got := errorMessages(nil); got == nil || len(got) != 0 {
+		t.Fatalf("nil input should give empty non-nil slice, got %#v", got)
+	}
+}
+
+func TestHTMLReporterShowsErrorCount(t *testing.T) {
+	out, err := (&HTMLReporter{}).Generate(reportWithErrors(errors.New("a"), errors.New("b")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	i := strings.Index(s, `summary-label">Errors<`)
+	if i < 0 || !strings.Contains(s[max(0, i-80):i], ">2<") {
+		t.Fatal("error count of 2 not shown in summary")
+	}
+}
+
+func TestSARIFReporterErrorsCoexistWithFindings(t *testing.T) {
+	rep := reportWithErrors(errors.New("a"))
+	rep.Findings = []rules.Finding{{RuleID: "R-1", Severity: rules.SeverityHigh, FilePath: "x.js", Line: 1}}
+	rep.TotalFindings = 1
+	out, err := (&SARIFReporter{}).Generate(rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Runs []struct {
+			Results     []any
+			Invocations []any
+		}
+	}
+	if err := json.Unmarshal(out, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Runs[0].Results) != 1 || len(doc.Runs[0].Invocations) != 1 {
+		t.Fatalf("results/invocations wrong: %s", out)
+	}
+}

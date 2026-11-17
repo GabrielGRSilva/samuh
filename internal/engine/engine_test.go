@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"samuh/internal/analyzer"
@@ -106,6 +107,61 @@ func TestRunNoErrors(t *testing.T) {
 	rep := runEngine(t, a, rules.ScanScopeFolder, map[string]string{"a.js": "x = 1"})
 	if len(rep.Errors) != 0 {
 		t.Fatalf("expected no errors, got %v", rep.Errors)
+	}
+}
+
+
+func TestRunProjectAnalysisSkippedForFolderScope(t *testing.T) {
+	called := false
+	a := &fakeAnalyzer{
+		analyzeFn: func(analyzer.FileContext) ([]rules.Finding, error) { return nil, nil },
+		projectFn: func() ([]rules.Finding, error) { called = true; return nil, errors.New("x") },
+	}
+	rep := runEngine(t, a, rules.ScanScopeFolder, map[string]string{"a.js": "x = 1"})
+	if called || len(rep.Errors) != 0 {
+		t.Fatalf("project analysis must not run for folder scope (called=%v, errors=%v)", called, rep.Errors)
+	}
+}
+
+func TestRunProjectFindingsKeptAlongsideErrors(t *testing.T) {
+	a := &fakeAnalyzer{
+		analyzeFn: func(analyzer.FileContext) ([]rules.Finding, error) { return nil, errors.New("file fail") },
+		projectFn: func() ([]rules.Finding, error) {
+			return []rules.Finding{{RuleID: "P-1", Severity: rules.SeverityHigh}}, nil
+		},
+	}
+	rep := runEngine(t, a, rules.ScanScopeProject, map[string]string{"a.js": "x = 1"})
+	if rep.TotalFindings != 1 || len(rep.Errors) != 1 {
+		t.Fatalf("want 1 finding and 1 error, got %d and %d", rep.TotalFindings, len(rep.Errors))
+	}
+}
+
+func TestRunIgnoresUnsupportedExtensions(t *testing.T) {
+	calls := 0
+	var mu sync.Mutex
+	a := &fakeAnalyzer{analyzeFn: func(analyzer.FileContext) ([]rules.Finding, error) {
+		mu.Lock()
+		calls++
+		mu.Unlock()
+		return nil, errors.New("should not be called for .js only")
+	}}
+	rep := runEngine(t, a, rules.ScanScopeFolder, map[string]string{"notes.txt": "hello"})
+	if calls != 0 || len(rep.Errors) != 0 {
+		t.Fatalf("analyzer called %d times, errors=%v", calls, rep.Errors)
+	}
+}
+
+func TestRunCancelledContextReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.js"), []byte("x = 1"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reg := analyzer.NewRegistry()
+	_ = reg.Register(&fakeAnalyzer{analyzeFn: func(analyzer.FileContext) ([]rules.Finding, error) { return nil, nil }})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := New(reg, Options{Scope: rules.ScanScopeFolder, Path: dir, MaxFileSize: 1 << 20}).Run(ctx); err == nil {
+		t.Fatal("expected error for cancelled context")
 	}
 }
 
