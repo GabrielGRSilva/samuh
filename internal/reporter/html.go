@@ -294,6 +294,10 @@ const htmlTemplate = `<!DOCTYPE html>
                     <div class="summary-stat">{{.ProjectPath}}</div>
                     <div class="summary-label">Project</div>
                 </div>
+                <div>
+                    <div class="summary-stat">{{len .Errors}}</div>
+                    <div class="summary-label">Errors</div>
+                </div>
             </div>
         </div>
 
@@ -386,6 +390,19 @@ const htmlTemplate = `<!DOCTYPE html>
                 {{end}}
             </div>
         </div>
+
+        {{if .Errors}}
+        <div class="card" style="border-left: 4px solid var(--sev-critical);">
+            <h2>Operational Errors / Skipped Files</h2>
+            <p>The following files or components encountered operational errors during the scan:</p>
+            <ul>
+                {{range .Errors}}
+                <li><code>{{.}}</code></li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+
     </div>
 
     <footer class="samuh-footer">

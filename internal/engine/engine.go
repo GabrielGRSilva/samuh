@@ -47,6 +47,7 @@ func New(registry *analyzer.Registry, opts Options) *Engine {
 
 // Run executes the scan, honoring ctx cancellation, and returns the report.
 func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
+	opErrors := []error{}
 	start := time.Now()
 
 	scn := scanner.New(e.opts.Path, e.opts.Exclude, e.opts.MaxFileSize)
@@ -101,9 +102,15 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 
 				ext := strings.ToLower(filepath.Ext(fc.Path))
 				for _, a := range analyzers {
+
 					if supportsExt(a, ext) {
-						findings, err := a.Analyze(ctx, *fc)
-						if err == nil && len(findings) > 0 {
+						findings, err := safeAnalyze(ctx, a, *fc)
+
+						if err != nil {
+							mu.Lock()
+							opErrors = append(opErrors, fmt.Errorf("%s: analyzer %s: %w", fc.RelativePath, a.Name(), err))
+							mu.Unlock()
+						} else if len(findings) > 0 {
 							mu.Lock()
 							allFindings = append(allFindings, findings...)
 							mu.Unlock()
@@ -124,16 +131,29 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		if e.opts.Verbose {
 			fmt.Fprintf(os.Stderr, "[verbose] Running project-level analysis...\n")
 		}
+
 		for _, a := range analyzers {
-			findings, err := a.AnalyzeProject(ctx, e.opts.Path)
-			if err == nil && len(findings) > 0 {
+			findings, err := safeAnalyzeProject(ctx, a, e.opts.Path)
+
+			if err != nil {
+				mu.Lock()
+				opErrors = append(opErrors, fmt.Errorf("project analysis: analyzer %s: %w", a.Name(), err))
+				mu.Unlock()
+
+			} else if len(findings) > 0 {
+				mu.Lock()
 				allFindings = append(allFindings, findings...)
+				mu.Unlock()
+
 				if e.opts.Verbose {
 					fmt.Fprintf(os.Stderr, "[verbose] %s project analysis: %d finding(s)\n", a.Name(), len(findings))
 				}
 			}
 		}
 	}
+
+	// Workers append errors concurrently; sort for deterministic reports.
+	sort.Slice(opErrors, func(i, j int) bool { return opErrors[i].Error() < opErrors[j].Error() })
 
 	if e.opts.Verbose {
 		fmt.Fprintf(os.Stderr, "[verbose] Total raw findings before filtering: %d\n", len(allFindings))
@@ -189,6 +209,7 @@ func (e *Engine) Run(ctx context.Context) (*rules.ScanReport, error) {
 		Summary:        summary,
 		Languages:      languages,
 		ScannerVersion: "0.1.0",
+		Errors:         opErrors,
 	}
 
 	return report, nil
@@ -223,4 +244,24 @@ func supportsExt(a analyzer.Analyzer, ext string) bool {
 		}
 	}
 	return false
+}
+
+// safeAnalyze runs a.Analyze, converting a panic into an error so one bad file cannot abort the scan.
+func safeAnalyze(ctx context.Context, a analyzer.Analyzer, fc analyzer.FileContext) (findings []rules.Finding, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			findings, err = nil, fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return a.Analyze(ctx, fc)
+}
+
+// safeAnalyzeProject runs a.AnalyzeProject, converting a panic into an error.
+func safeAnalyzeProject(ctx context.Context, a analyzer.Analyzer, root string) (findings []rules.Finding, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			findings, err = nil, fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return a.AnalyzeProject(ctx, root)
 }
